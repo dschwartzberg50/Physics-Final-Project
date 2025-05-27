@@ -8,14 +8,15 @@ block = box(pos=vec(4, 0, 0), length=1, height=1, width=1)
 dt = 0.01
 
 mass = 20
-k = 4
+k = 1
 vel = 0
 block_x = block.pos.x
 x_equilibrium = 2
     
 #block=box()
 #dt, mass, k, vel, block_x, x_equilibrium = 0,0,0,0,0
-    
+
+#spring_visual = helix(pos=vec(x_equilibrium, 0, 0), axis=block.pos-vec(x_equilibrium, 0, 0), color=color.red)
 
 
 sphere(pos=vec(x_equilibrium,0,0), radius=0.1)
@@ -31,4 +32,7 @@ while (True):
     block_x += vel
     
     block.pos = vec(block_x, 0, 0)
+    
+    
+#    spring_visual = helix(pos=vec(x_equilibrium, 0, 0), axis=block.pos-vec(x_equilibrium, 0, 0), color=color.red)
     
