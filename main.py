@@ -2,6 +2,18 @@ Web VPython 3.2
 
 scene = canvas(width=600, height=500)
 
+#graph set up
+g1 = graph(width=300, height=350, title="Kinetic and Potential Energy of Box", xtitle="time(s)", ytitle="Energy(KJ)", align='right')
+KE_graph = gcurve(color=color.blue, graph=g1)
+U_graph = gcurve(color=color.red, graph=g1)
+g2 = graph(width=300, height=350, title="X Position of Box", xtitle="time(s)", ytitle="Position(meters)", align='right')
+path_graph = gcurve(color=color.purple, graph=g2)
+for x in arange(0, 2*pi, pi/20):
+        rate(30)
+        KE_graph.plot(x, sin(x))
+        U_graph.plot(x, cos(x))
+        path_graph.plot(x, sin(x))
+    
 # line = curve(pos=[pivot.pos, ball.pos], color=color.red)
 
 block = box(pos=vec(4, 0, 0), length=1, height=1, width=1)
