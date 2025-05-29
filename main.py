@@ -9,30 +9,34 @@ U_graph = gcurve(color=color.red, graph=g1)
 g2 = graph(width=300, height=350, title="X Position of Box", xtitle="time(s)", ytitle="Position(meters)", align='right')
 path_graph = gcurve(color=color.purple, graph=g2)
 for x in arange(0, 2*pi, pi/20):
-        rate(30)
         KE_graph.plot(x, sin(x))
         U_graph.plot(x, cos(x))
         path_graph.plot(x, sin(x))
 
+def spring_slider_function(evt):
+    spring_slider_text.text = f"Number of Springs: {evt.value}"
+
+spring_slider = slider(bind=spring_slider_function, min=1, max=5, step=1, value=2, length=200, id="spring_slider")
+spring_slider_text = wtext(text=f"Number of Springs: {spring_slider.value}")
+
+def spring_mode_button_function(evt):
+    global is_series_mode
+    is_series_mode = not is_series_mode
+    spring_mode_button.text = "Series" if is_series_mode else "Parallel"
+    print(is_series_mode)
+ 
+scene.append_to_caption("     ")
+is_series_mode = True # True = series, False = parallel
+spring_mode_button = button(bind=spring_mode_button_function, text="Series")
+
+
 #presets dropdown
 def presetselect(evt):
-        console.log(evt)
-        if evt.index < 1:
-                pass
-        elif evt.index is 1:
-                pointer.color=color.yellow
-        elif evt.index is 2:
-                pointer.color=color.magenta
-        elif evt.index is 3:
-                pointer.color=color.cyan
-        elif evt.index is 4:
-                pointer.color=color.red
-        elif evt.index is 5:
-                pointer.color=color.blue
+    pass
 presetlist = ['Cliff', 'Upwards Slope', 'Downwards Slope', 'Loop', 'Coaster']
+scene.append_to_caption("     ")
 menu(bind=presetselect, choices=presetlist)
     
-# line = curve(pos=[pivot.pos, ball.pos], color=color.red)
 
 block = box(pos=vec(4, 0, 0), length=1, height=1, width=1)
 dt = 0.01
