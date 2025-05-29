@@ -13,6 +13,24 @@ for x in arange(0, 2*pi, pi/20):
         KE_graph.plot(x, sin(x))
         U_graph.plot(x, cos(x))
         path_graph.plot(x, sin(x))
+
+#presets dropdown
+def presetselect(evt):
+        console.log(evt)
+        if evt.index < 1:
+                pass
+        elif evt.index is 1:
+                pointer.color=color.yellow
+        elif evt.index is 2:
+                pointer.color=color.magenta
+        elif evt.index is 3:
+                pointer.color=color.cyan
+        elif evt.index is 4:
+                pointer.color=color.red
+        elif evt.index is 5:
+                pointer.color=color.blue
+presetlist = ['Cliff', 'Upwards Slope', 'Downwards Slope', 'Loop', 'Coaster']
+menu(bind=presetselect, choices=presetlist)
     
 # line = curve(pos=[pivot.pos, ball.pos], color=color.red)
 
