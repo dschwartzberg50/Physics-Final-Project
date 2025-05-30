@@ -23,19 +23,39 @@ for x in arange(0, 2*pi, pi/20):
         KE_curve.plot(x, sin(x))
         U_curve.plot(x, cos(x))
         position_curve.plot(x, sin(x))
+     
+
+def change_springs():
+    global visual_springs_list
+    n_springs = spring_slider.value
+    is_series_mode = spring_mode_button.is_series_mode
+    
+    for i in range(len(visual_springs_list)):
+        spring = visual_springs_list[i]
+        visual_springs_list[i] = None
+        del spring
+
+    if is_series_mode:
+        pass
+    else:
+        vertical_space = 5
+        helix(pos=vec(x_equilibrium, 0, 0), axis=block.pos-vec(x_equilibrium, 0, 0), color=color.red)
 
 def spring_slider_function(evt):
     spring_slider_text.text = f"Number of Springs: {evt.value}"
-
-spring_slider = slider(bind=spring_slider_function, min=1, max=5, step=1, value=2, length=200, id="spring_slider", pos=scene.caption_anchor)
+    change_springs()
+    
+spring_slider = slider(bind=spring_slider_function, min=1, max=5, step=1, value=1, length=200, id="spring_slider", pos=scene.caption_anchor)
 spring_slider_text = wtext(text=f"Number of Springs: {spring_slider.value}", pos=scene.caption_anchor)
 
 def spring_mode_button_function(evt):
     spring_mode_button.is_series_mode = not spring_mode_button.is_series_mode
     spring_mode_button.text = "Series" if spring_mode_button.is_series_mode else "Parallel"
+    change_springs()
  
 scene.append_to_caption("     ")
 spring_mode_button = button(bind=spring_mode_button_function, text="Series", pos=scene.caption_anchor, is_series_mode=True)
+spring_mode_button.is_series_mode = False
 # is_series_mode: True = series, False = parallel
 
 #presets dropdown
@@ -43,7 +63,7 @@ def presetselect(evt):
     pass
 presetlist = ['Cliff', 'Upwards Slope', 'Downwards Slope', 'Loop', 'Coaster']
 scene.append_to_caption("     ")
-menu(bind=presetselect, choices=presetlist, pos=scene.caption_anchor)
+menu(bind=presetselect, choices=presetlist, pos=scene.caption_anchor, )
     
 
 block = box(pos=vec(4, 0, 0), length=1, height=1, width=1)
@@ -57,8 +77,12 @@ x_equilibrium = 2
     
 #block=box()
 #dt, mass, k, vel, block_x, x_equilibrium = 0,0,0,0,0
-
-spring_visual = helix(pos=vec(x_equilibrium, 0, 0), axis=block.pos-vec(x_equilibrium, 0, 0), color=color.red)
+parallel_springs_list = []
+vertical_spacing = 3
+for i in range(spring_slider.value):
+    parallel_springs_list.append(
+        helix(pos=vec(0, vertical_spacing * i, 0), axis=block.pos, color=color.red)
+    )
 
 #cliff
 cliffheightslider = slider( bind=cliffheightfunc, min=5, max=25 )
