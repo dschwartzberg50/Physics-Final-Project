@@ -60,6 +60,16 @@ x_equilibrium = 2
 
 spring_visual = helix(pos=vec(x_equilibrium, 0, 0), axis=block.pos-vec(x_equilibrium, 0, 0), color=color.red)
 
+#cliff
+cliffheightslider = slider( bind=cliffheightfunc, min=5, max=25 )
+def cliffheightfunc(evt):
+    console.log(evt)
+    cliffheight.height = evt.value
+    cliffheight.pos.y = -evt.value/2-.5
+    endofcliff.pos.y = -evt.value-.5
+cliff = box(pos=vec(7, -.5, 0), length=10, height=.1, width=1, color=color.white)
+cliffheight = box(pos=vec(12, -5.5, 0), length=.1, height=10, width=1, color=color.white)
+endofcliff = box(pos=vec(22, -10.5, 0), length=20, height=.1, width=1, color=color.white)
 
 sphere(pos=vec(x_equilibrium,0,0), radius=0.1)
 
