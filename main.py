@@ -84,16 +84,33 @@ for i in range(spring_slider.value):
         helix(pos=vec(0, vertical_spacing * i, 0), axis=block.pos, color=color.red)
     )
 
+def presetselect(evt):
+        console.log(evt)
+        if evt.index < 1:
+                pass
+        elif evt.index is 1:
+                #cliff
+                cliffheightslider = slider( bind=cliffheightfunc, min=5, max=25 )
+                def cliffheightfunc(evt):
+                    console.log(evt)
+                    cliffheight.height = evt.value
+                    cliffheight.pos.y = -evt.value/2-.5
+                    endofcliff.pos.y = -evt.value-.5
+                cliff = box(pos=vec(7, -.5, 0), length=10, height=.1, width=1, color=color.white)
+                cliffheight = box(pos=vec(12, -5.5, 0), length=.1, height=10, width=1, color=color.white)
+                endofcliff = box(pos=vec(22, -10.5, 0), length=20, height=.1, width=1, color=color.white)
+presetlist = ['Pick a preset :)','Cliff', 'Upwards Slope', 'Downwards Slope', 'Loop', 'Coaster']
+menu(bind=presetselect, choices=presetlist)
+
+# line = curve(pos=[pivot.pos, ball.pos], color=color.red)
 #cliff
-cliffheightslider = slider( bind=cliffheightfunc, min=5, max=25 )
-def cliffheightfunc(evt):
+Upwardsslopeslider = slider( bind=Upwardsslopefunc, min=0, max=90 )
+def Upwardsslopefunc(evt):
     console.log(evt)
-    cliffheight.height = evt.value
-    cliffheight.pos.y = -evt.value/2-.5
-    endofcliff.pos.y = -evt.value-.5
-cliff = box(pos=vec(7, -.5, 0), length=10, height=.1, width=1, color=color.white)
-cliffheight = box(pos=vec(12, -5.5, 0), length=.1, height=10, width=1, color=color.white)
-endofcliff = box(pos=vec(22, -10.5, 0), length=20, height=.1, width=1, color=color.white)
+    Upwardsslopeangle.axis.y = (evt.value/360)*40*pi
+    Upwardsslopeangle.length = 20
+Upwardsslope = box(pos=vec(7, -.5, 0), length=10, height=.1, width=1, color=color.white)
+Upwardsslopeangle = box(pos=vec(19, 6.5, 0), length=20, height=.1, width=1,axis=vec(1,-1,0), color=color.white)
 
 sphere(pos=vec(x_equilibrium,0,0), radius=0.1)
 
