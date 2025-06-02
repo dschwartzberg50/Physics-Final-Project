@@ -94,21 +94,20 @@ def presetselect(evt):
                 cliffheight = box(pos=vec(12, -5.5, 0), length=.1, height=10, width=1, color=color.white)
                 endofcliff = box(pos=vec(22, -10.5, 0), length=20, height=.1, width=1, color=color.white)
         elif evt.index is 2:
-            #slope
+            # upwards slope
             Upwardsslopeslider = slider( bind=Upwardsslopefunc, min=0, max=90)
+            slope_length = 10
+            slope_initial_pos = vec(19,6.5,0)
+
             def Upwardsslopefunc(evt):
                 console.log(evt)
-                a = (evt.value/360*2*pi)
-                if evt.value > 45:
-                    Upwardsslopeangle.axis.y = (evt.value/pi)
-                else:
-                    Upwardsslopeangle.axis.y = (evt.value/3)
-                Upwardsslopeangle.pos.x = (12+10*cos(a))
-                Upwardsslopeangle.pos.y = (-.5 + 10*sin(a))
-                print(Upwardsslopeangle.axis.y)
-                Upwardsslopeangle.length = 20
-            Upwardsslope = box(pos=vec(7, -.5, 0), length=10, height=.1, width=1, color=color.white)
-            Upwardsslopeangle = box(pos=vec(19, 6.5, 0), length=20, height=.1, width=1,axis=vec(1,1,0), color=color.white)
+                a = radians(evt.value)
+                console.log("rad" + a)
+                Upwardsslopeangle.pos = slope_initial_pos + vec(slope_length/2 * cos(a), slope_length/2 * sin(a), 0)
+                Upwardsslopeangle.axis = vec(slope_length*cos(a), slope_length*sin(a), 0)
+                
+Upwardsslope = box(pos=vec(7, -.5, 0), length=10, height=.1, width=1, color=color.white)
+Upwardsslopeangle = box(pos=vec(19, 6.5, 0), length=20, height=.1, width=1,axis=vec(1,1,0), color=color.white)
 presetlist = ['Pick a preset :)','Cliff', 'Upwards Slope', 'Downwards Slope', 'Loop', 'Coaster']
 menu(bind=presetselect, choices=presetlist)
 sphere(pos=vec(x_equilibrium,0,0), radius=0.1)
