@@ -1,6 +1,7 @@
 Web VPython 3.2
 
 scene = canvas(width=600, height=500, title="Spring Oscillator!\n")
+scene.camera.pos = vec(10, 0, 20)
 
 def start_button_function(evt):
     start_button.started = True
@@ -30,14 +31,13 @@ def change_springs():
     n_springs = spring_slider.value
     is_series_mode = spring_mode_button.is_series_mode
     
-    for i in range(len(visual_springs_list)):
-        spring = visual_springs_list[i]
-        visual_springs_list[i] = None
-        del spring
-
     if is_series_mode:
+        for i, spring in enumerate(series_springs_list):
+            print(i, spring)
         pass
     else:
+        for i, spring in enumerate(parallel_springs_list):
+            pass
         vertical_space = 5
         helix(pos=vec(x_equilibrium, 0, 0), axis=block.pos-vec(x_equilibrium, 0, 0), color=color.red)
 
@@ -67,15 +67,50 @@ k = 1
 vel = 0
 block_x = block.pos.x
 x_equilibrium = 2
-    
-#block=box()
-#dt, mass, k, vel, block_x, x_equilibrium = 0,0,0,0,0
-parallel_springs_list = []
-vertical_spacing = 3
-for i in range(spring_slider.value):
-    parallel_springs_list.append(
-        helix(pos=vec(0, vertical_spacing * i, 0), axis=block.pos, color=color.red)
+
+
+max_springs = 5
+init_spring_length = 2.5
+spring_radius = 1
+curve_thickness = 0.05
+num_coils = 4.5
+# initialize the series springs
+series_springs_list = []
+horizontal_spacing = 1 # this is constant
+for i in range(max_springs):
+    series_springs_list.append(
+        helix(pos=vec(horizontal_spacing + i * (init_spring_length + horizontal_spacing), 0, 0), 
+              axis=vec(init_spring_length, 0, 0), 
+              coils=num_coils,
+              radius=spring_radius, 
+              color=color.red)  
     )
+    
+# initialize the lines between the springs and block
+series_lines_list = []
+for i in range(max_springs+1):
+    left_point = vec(i*(horizontal_spacing+init_spring_length), 0, 0)
+    right_point = left_point + vec(horizontal_spacing,0,0)
+    out_point1 = left_point + vec(0, 0, -spring_radius)
+    out_point2 = right_point + vec(0, 0, spring_radius)
+    curve_points = [out_point1, left_point, right_point, out_point2]
+    if i == 0:
+        curve_points.pop(0)
+    if i == max_springs:
+        curve_points.pop()
+    series_lines_list.append(
+        curve(pos=curve_points,
+              radius=curve_thickness,
+              color=color.red)
+    )
+
+# initialize the parallel springs
+#parallel_springs_list = []
+#vertical_spacing = 3
+#for i in range(max_springs):
+#    parallel_springs_list.append(
+#        helix(pos=vec(0, vertical_spacing * i, 0), axis=block.pos, color=color.red)
+#    )
 
 #presets dropdown
 def presetselect(evt):
@@ -106,11 +141,10 @@ def presetselect(evt):
                 Upwardsslopeangle.pos = slope_initial_pos + vec(slope_length/2 * cos(a), slope_length/2 * sin(a), 0)
                 Upwardsslopeangle.axis = vec(slope_length*cos(a), slope_length*sin(a), 0)
                 
-Upwardsslope = box(pos=vec(7, -.5, 0), length=10, height=.1, width=1, color=color.white)
+Upwardsslope = box(pos=vec(5, -.5, 0), length=10, height=.1, width=1, color=color.white)
 Upwardsslopeangle = box(pos=vec(19, 6.5, 0), length=20, height=.1, width=1,axis=vec(1,1,0), color=color.white)
 presetlist = ['Pick a preset :)','Cliff', 'Upwards Slope', 'Downwards Slope', 'Loop', 'Coaster']
 menu(bind=presetselect, choices=presetlist)
-sphere(pos=vec(x_equilibrium,0,0), radius=0.1)
 
 # initial while loop for spring-oscillatory motion    
 while (True):
