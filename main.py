@@ -110,7 +110,7 @@ def presetselect(evt):
             Upwardsslope = box(pos=vec(7, -.5, 0), length=10, height=.1, width=1, color=color.white)
             Upwardsslopeangle = box(pos=vec(19, 6.5, 0), length=20, height=.1, width=1,axis=vec(1,1,0), color=color.white)
 presetlist = ['Pick a preset :)','Cliff', 'Upwards Slope', 'Downwards Slope', 'Loop', 'Coaster']
-
+menu(bind=presetselect, choices=presetlist)
 sphere(pos=vec(x_equilibrium,0,0), radius=0.1)
 
 # initial while loop for spring-oscillatory motion    
@@ -128,9 +128,6 @@ while (True):
     
     block.pos = vec(block_x, 0, 0)
     
-    
-    spring_visual.pos=vec(x_equilibrium, 0, 0)
-    spring_visual.axis=block.pos-vec(x_equilibrium, 0, 0)
     
     
 # second while loop for projectile motion after block has been launched
