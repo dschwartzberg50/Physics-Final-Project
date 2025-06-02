@@ -57,13 +57,6 @@ scene.append_to_caption("     ")
 spring_mode_button = button(bind=spring_mode_button_function, text="Series", pos=scene.caption_anchor, is_series_mode=True)
 spring_mode_button.is_series_mode = False
 # is_series_mode: True = series, False = parallel
-
-#presets dropdown
-def presetselect(evt):
-    pass
-presetlist = ['Cliff', 'Upwards Slope', 'Downwards Slope', 'Loop', 'Coaster']
-scene.append_to_caption("     ")
-menu(bind=presetselect, choices=presetlist, pos=scene.caption_anchor, )
     
 
 block = box(pos=vec(4, 0, 0), length=1, height=1, width=1)
