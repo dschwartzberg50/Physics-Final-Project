@@ -120,6 +120,7 @@ def presetselect(evt):
         elif evt.index is 1:
                 #cliff
                 cliffheightslider = slider( bind=cliffheightfunc, min=5, max=25 )
+                wtext(text='height')
                 def cliffheightfunc(evt):
                     console.log(evt)
                     cliffheight.height = evt.value
@@ -128,17 +129,20 @@ def presetselect(evt):
                 cliff = box(pos=vec(7, -.5, 0), length=10, height=.1, width=1, color=color.white)
                 cliffheight = box(pos=vec(12, -5.5, 0), length=.1, height=10, width=1, color=color.white)
                 endofcliff = box(pos=vec(22, -10.5, 0), length=20, height=.1, width=1, color=color.white)
-
-# upwards slope
-Upwardsslopeslider = slider( bind=Upwardsslopefunc, min=0, max=90, value = 45)
-def Upwardsslopefunc(evt):
-    console.log(evt)
-    a = radians(evt.value)
-    Upwardsslopeangle.rotate(axis=vec(0,0,1), angle=(a), origin=vec(12.5,0,0))
-    print(a)
-Upwardsslope = box(pos=vec(7, -.5, 0), length=10, height=.1, width=1, color=color.white)
-Upwardsslopeangle = box(pos=vec(19, 6.5, 0), length=20, height=.1, width=1,axis=vec(1,1,0), color=color.white)
-presetlist = ['Pick a preset :)','Cliff', 'Upwards Slope', 'Downwards Slope', 'Loop', 'Coaster']
+        elif evt.index is 2:
+            #slope
+            slopeslider = slider(min=(-pi/2), max=pi/2, value=pi/4, length=300, bind=slopefunc)
+            wtext(text='angle')
+            origin = vec(12, -0.5, 0)
+            def slopefunc(evt):
+                console.log(evt)
+                direction = vec(cos(evt.value), sin(evt.value), 0) 
+                slopeangle.axis = (direction * 20)                       
+                slopeangle.pos = (origin + 0.5 * slopeangle.axis) 
+                    
+            slope = box(pos=vec(7, -.5, 0), length=10, height=.1, width=1, color=color.white)
+            slopeangle = box(pos=vec(19, 6.5, 0), length=20, height=.1, width=1,axis=vec(1,1,0), color=color.white)
+presetlist = ['Pick a preset :)','Cliff', 'Slope', 'Loop', 'Coaster']
 menu(bind=presetselect, choices=presetlist)
 
 # initial while loop for spring-oscillatory motion    
