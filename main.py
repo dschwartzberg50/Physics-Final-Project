@@ -147,7 +147,7 @@ def presetselect(evt):
         console.log(evt)
         if evt.index < 1:
                 pass
-        elif evt.index == 1:
+        elif evt.index is 1:
                 #cliff
                 cliffheightslider = slider( bind=cliffheightfunc, min=5, max=25 )
                 wtext(text='height')
@@ -159,9 +159,9 @@ def presetselect(evt):
                 cliff = box(pos=vec(7, -.5, 0), length=10, height=.1, width=1, color=color.white)
                 cliffheight = box(pos=vec(12, -5.5, 0), length=.1, height=10, width=1, color=color.white)
                 endofcliff = box(pos=vec(22, -10.5, 0), length=20, height=.1, width=1, color=color.white)
-        elif evt.index == 2:
+        elif evt.index is 2:
             #slope
-            slopeslider = slider(min=(-pi/2), max=pi/2, value=pi/4, length=300, bind=slopefunc)
+            slopeslider = slider(min=(-pi/3), max=(pi/3), value=pi/4, length=300, bind=slopefunc)
             wtext(text='angle')
             origin = vec(12, -0.5, 0)
             def slopefunc(evt):
@@ -174,6 +174,15 @@ def presetselect(evt):
             slopeangle = box(pos=vec(19, 6.5, 0), length=20, height=.1, width=1,axis=vec(1,1,0), color=color.white)
 presetlist = ['Pick a preset :)','Cliff', 'Slope', 'Loop', 'Coaster']
 menu(bind=presetselect, choices=presetlist)
+
+#loop
+#loopslider = slider(min=(1), max=(8), value=5, length=300, bind=loopfunc)
+#loop = box(pos=vec(7, -.5, 0), length=10, height=.1, width=1, color=color.white)
+#loopradius = helix(pos=vec(19, 6.5, 0), axis=vec(0,0,1), coils = 1, color=color.white, radius=4)
+#loopradius.rotate (axis = vec(0, 0, 1), angle = (pi/2), origin = loopradius.pos+loopradius.axis/2)
+#def loopfunc(evt):
+    #console.log(evt)
+    #loopradius.radius= evt.value
 
 def equilibrium_pos_slider_function(evt):
     global block
