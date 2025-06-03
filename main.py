@@ -3,9 +3,13 @@ Web VPython 3.2
 scene = canvas(width=600, height=500, title="Spring Oscillator!\n")
 scene.camera.pos = vec(10, 0, 20)
 
+# disables everything except for launch button
 def start_button_function(evt):
     start_button.started = True
     start_button.disabled = True
+    spring_slider.disabled = True
+    # put other sliders here later to be disabled
+    
     launch_button.disabled = False
 start_button = button(bind=start_button_function, text='Start', background=color.green, pos=scene.title_anchor, disabled=False, started=False)
 
@@ -25,49 +29,56 @@ for x in arange(0, 2*pi, pi/20):
         U_curve.plot(x, cos(x))
         position_curve.plot(x, sin(x))
      
-
-def change_springs():
-    global visual_springs_list
-    n_springs = spring_slider.value
-    is_series_mode = spring_mode_button.is_series_mode
-    
-    if is_series_mode:
-        for i, spring in enumerate(series_springs_list):
-            print(i, spring)
-        pass
-    else:
-        for i, spring in enumerate(parallel_springs_list):
-            pass
-        vertical_space = 5
-        helix(pos=vec(x_equilibrium, 0, 0), axis=block.pos-vec(x_equilibrium, 0, 0), color=color.red)
-
 def spring_slider_function(evt):
     spring_slider_text.text = f"Number of Springs: {evt.value}"
-    change_springs()
     
+    global series_springs_list
+    global parallel_springs_list
+    springs_list = series_springs_list if spring_mode_button.is_series_mode else parallel_springs_list
+    lines_list = series_lines_list if spring_mode_button.is_series_mode else parallel_lines_list
+    
+    # makes the first n springs visible
+    
+    # set everything invisible by default
+    for spring in springs_list:
+        spring.visible = False
+    for series_line in lines_list:
+        series_line.visible = False
+        
+    # set the first n springs to be visible
+    for i in range(evt.value):
+        springs_list[i].visible = True
+    # note: the first curve should always be visible
+    # set the first n curves to be visible after i=0
+    for i in range(evt.value+1):
+        lines_list[i].visible = True
+        # make the last segment visible in case it was previously invisible
+        this_curve = lines_list[i]
+        this_curve.modify(this_curve.npoints-1, visible=True)
+    
+    # make the last segment of the last visible curve not visible
+    last_curve = lines_list[evt.value]
+    last_curve.modify(last_curve.npoints-1, visible=False)
+        
+    # set the position of the block
+    global block, spring_length, horizontal_spacing
+    total_length = horizontal_spacing + evt.value*(horizontal_spacing + spring_length)
+    block.pos.x = total_length + block.length/2
+
 spring_slider = slider(bind=spring_slider_function, min=1, max=5, step=1, value=1, length=200, id="spring_slider", pos=scene.caption_anchor)
 spring_slider_text = wtext(text=f"Number of Springs: {spring_slider.value}", pos=scene.caption_anchor)
 
+box(pos=vec(0,0,0), height=10, width=0.1,length=0.1)
+
+# future: need to made the spring layout and make everything visisble / invisible
 def spring_mode_button_function(evt):
     spring_mode_button.is_series_mode = not spring_mode_button.is_series_mode
     spring_mode_button.text = "Series" if spring_mode_button.is_series_mode else "Parallel"
-    change_springs()
  
 scene.append_to_caption("     ")
 spring_mode_button = button(bind=spring_mode_button_function, text="Series", pos=scene.caption_anchor, is_series_mode=True)
-spring_mode_button.is_series_mode = False
+spring_mode_button.is_series_mode = True
 # is_series_mode: True = series, False = parallel
-    
-
-block = box(pos=vec(4, 0, 0), length=1, height=1, width=1)
-dt = 0.01
-
-mass = 20
-k = 1
-vel = 0
-block_x = block.pos.x
-x_equilibrium = 2
-
 
 max_springs = 5
 init_spring_length = 2.5
@@ -77,13 +88,16 @@ num_coils = 4.5
 # initialize the series springs
 series_springs_list = []
 horizontal_spacing = 1 # this is constant
+spring_length = init_spring_length
 for i in range(max_springs):
     series_springs_list.append(
         helix(pos=vec(horizontal_spacing + i * (init_spring_length + horizontal_spacing), 0, 0), 
               axis=vec(init_spring_length, 0, 0), 
               coils=num_coils,
               radius=spring_radius, 
-              color=color.red)  
+              k=1,
+              color=color.red
+          )  
     )
     
 # initialize the lines between the springs and block
@@ -96,14 +110,14 @@ for i in range(max_springs+1):
     curve_points = [out_point1, left_point, right_point, out_point2]
     if i == 0:
         curve_points.pop(0)
-    if i == max_springs:
-        curve_points.pop()
     series_lines_list.append(
         curve(pos=curve_points,
               radius=curve_thickness,
               color=color.red)
     )
 
+parallel_springs_list = []
+parallel_lines_list = []
 # initialize the parallel springs
 #parallel_springs_list = []
 #vertical_spacing = 3
@@ -112,12 +126,28 @@ for i in range(max_springs+1):
 #        helix(pos=vec(0, vertical_spacing * i, 0), axis=block.pos, color=color.red)
 #    )
 
+# modify the springs based on the block's position
+def modify_springs(is_series_mode, springs_list, n):
+    global horizontal_spacing, spring_length
+    if is_series_mode:
+        spring_length = block.pos.x - (n+1)*horizontal_spacing
+        for spring in springs_list:
+            spring.length = spring_length
+    else:
+        pass
+
+def calculate_equivalent_k(is_series_mode, springs_list, n):
+    if is_series_mode:
+        return 1 / sum(1/spring.k for spring in springs_list[:n])
+    else:
+        return sum(spring.k for spring in springs_list[:n])
+        
 #presets dropdown
 def presetselect(evt):
         console.log(evt)
         if evt.index < 1:
                 pass
-        elif evt.index is 1:
+        elif evt.index == 1:
                 #cliff
                 cliffheightslider = slider( bind=cliffheightfunc, min=5, max=25 )
                 wtext(text='height')
@@ -129,7 +159,7 @@ def presetselect(evt):
                 cliff = box(pos=vec(7, -.5, 0), length=10, height=.1, width=1, color=color.white)
                 cliffheight = box(pos=vec(12, -5.5, 0), length=.1, height=10, width=1, color=color.white)
                 endofcliff = box(pos=vec(22, -10.5, 0), length=20, height=.1, width=1, color=color.white)
-        elif evt.index is 2:
+        elif evt.index == 2:
             #slope
             slopeslider = slider(min=(-pi/2), max=pi/2, value=pi/4, length=300, bind=slopefunc)
             wtext(text='angle')
@@ -145,21 +175,47 @@ def presetselect(evt):
 presetlist = ['Pick a preset :)','Cliff', 'Slope', 'Loop', 'Coaster']
 menu(bind=presetselect, choices=presetlist)
 
+def equilibrium_pos_slider_function(evt):
+    global block
+    block.x_equilibrium = equilibrium_pos_slider.value
+    equilibrium_pos_slider_text.text = f"Equilibrium Position: {equilibrium_pos_slider.value}"
+    
+    global equilibrium_shower
+    equilibrium_shower.pos.x = block.pos.x + equilibrium_pos_slider.value
+    
+equilibrium_pos_slider = slider(bind=equilibrium_pos_slider_function, min=-1, max=1, step=0.1, value=0, length=200, pos=scene.caption_anchor)
+equilibrium_pos_slider_text = wtext(text=f"Displacement from Equilibrium Position: {equilibrium_pos_slider.value}", pos=scene.caption_anchor)
+
+# note: need another slider for x_equilibrium position
+block_init_pos = 4
+block = box(pos=vec(block_init_pos, 0, 0), length=1, height=1, width=1, mass=20, vel=0, x_equilibrium=3)
+dt = 0.01
+
+equilibrium_shower = sphere(pos=block.pos + vec(0,2,0), radius=0.5, color=color.green)
+
+# assumed that: no sliders can be moved after the program has started
 # initial while loop for spring-oscillatory motion    
 while (True):
     rate(1/dt)
-#    print(f"{running=}, {launched=}")
     
     if (launch_button.launched): break
     if (not start_button.started): continue
-
-    F = -k*(block.pos.x - x_equilibrium)
-    acc = F / mass
-    vel += acc
-    block_x += vel
+        
+    k = calculate_equivalent_k(
+        spring_mode_button.is_series_mode, 
+        series_springs_list if spring_mode_button.is_series_mode else parallel_springs_list,
+        spring_slider.value
+    ) 
+    force = -k * (block.pos.x - block.x_equilibrium)
+    acc = force / block.mass
+    block.vel += acc
+    block.pos.x += block.vel
     
-    block.pos = vec(block_x, 0, 0)
-    
+    modify_springs(
+        spring_mode_button.is_series_mode, 
+        series_springs_list if spring_mode_button.is_series_mode else parallel_springs_list,
+        spring_slider.value
+    )
     
     
 # second while loop for projectile motion after block has been launched
