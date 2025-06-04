@@ -26,15 +26,20 @@ def launch_button_function(evt):
 launch_button = button(bind=launch_button_function, text='Launch', background=color.blue, pos=scene.title_anchor, disabled=True, launched=False)
 
 #graph set up
-KE_and_U_graph = graph(width=300, height=350, title="Kinetic and Potential Energy of Box", xtitle="time(s)", ytitle="Energy(KJ)", align='right')
-KE_curve = gcurve(color=color.blue, graph=KE_and_U_graph)
-U_curve = gcurve(color=color.red, graph=KE_and_U_graph)
+"""
+K_and_U_graph = graph(width=300, height=350, title="Kinetic and Potential Energy of Box", xtitle="time(s)", ytitle="Energy(KJ)", align='right')
+K_curve = gcurve(color=color.blue, graph=K_and_U_graph)
+U_curve = gcurve(color=color.red, graph=K_and_U_graph)
 position_graph = graph(width=300, height=350, title="X Position of Box", xtitle="time(s)", ytitle="Position(meters)", align='right')
 position_curve = gcurve(color=color.purple, graph=position_graph)
-for x in arange(0, 2*pi, pi/20):
-        KE_curve.plot(x, sin(x))
-        U_curve.plot(x, cos(x))
-        position_curve.plot(x, sin(x))
+"""
+K_graph = graph(width=300, height=350, title="Kinetic Energy vs time", xtitle="time", ytitle="Kinetic Energy")
+K_bar = gvbars(graph=K_graph, delta=5, label="Kinetic Energy")
+#U_graph = graph
+#U_bar
+#x_graph = graph
+#x_bar = 
+
      
 def spring_slider_function(evt):
     spring_slider_text.text = f"Number of Springs: {evt.value}"
@@ -72,12 +77,18 @@ def spring_slider_function(evt):
     total_length = horizontal_spacing + evt.value*(horizontal_spacing + spring_length)
     block.pos.x = total_length + block.length/2
     
+    # set the position of the equilibrium point (always the initial position of the block)
     equilibrium_point.pos.x = block.pos.x
+    
+    # calculate and set the maximum intiial velocity of the block so it doesn't go past x=0
+    k = calculate_equivalent_k()
+    block.max_initial_vel = sqrt(k/block.mass * (block.pos.x**2))
+    initial_velocity_slider_function(initial_velocity_slider)
 
 spring_slider = slider(bind=spring_slider_function, min=1, max=5, step=1, value=1, length=200, pos=scene.caption_anchor)
 spring_slider_text = wtext(text=f"Number of Springs: {spring_slider.value}", pos=scene.caption_anchor)
 
-box(pos=vec(0,0,0), height=10, width=0.1,length=0.1)
+box(pos=vec(0,0,0), height=10, width=5,length=0.1)
 
 # future: need to made the spring layout and make everything visisble / invisible
 def spring_mode_button_function(evt):
@@ -167,11 +178,17 @@ def modify_springs():
             spring.length = l
             spring.pos.x = d + i * (l+d)
         
+        spring_length = l
+        horizontal_spacing = d
+        
     else:
         pass
 
-def calculate_equivalent_k(is_series_mode, springs_list, n):
-    if is_series_mode:
+def calculate_equivalent_k():
+    global series_springs_list, parallel_springs_list, spring_slider
+    springs_list = series_springs_list if spring_mode_button.is_series_mode else parallel_springs_list
+    n = spring_slider.value
+    if spring_mode_button.is_series_mode:
         return 1 / sum(1/spring.k for spring in springs_list[:n])
     else:
         return sum(spring.k for spring in springs_list[:n])
@@ -183,42 +200,29 @@ def presetselect(evt):
                 pass
         elif evt.index is 1:
                 #cliff
-                cliffheightslider = slider( bind=cliffheightfunc, min=5, max=50, value = 30 )
+                cliffheightslider = slider( bind=cliffheightfunc, min=5, max=25 )
                 wtext(text='height')
                 def cliffheightfunc(evt):
                     console.log(evt)
                     cliffheight.height = evt.value
                     cliffheight.pos.y = -evt.value/2-.5
                     endofcliff.pos.y = -evt.value-.5
-                cliff = box(pos=vec(15, -.5, 0), length=30, height=.1, width=1, color=color.white)
-                cliffheight = box(pos=vec(30, -15.5, 0), length=.1, height=30, width=1, color=color.white)
-                endofcliff = box(pos=vec(60, -30.5, 0), length=60, height=.1, width=1, color=color.white)
+                cliff = box(pos=vec(7, -.5, 0), length=10, height=.1, width=1, color=color.white)
+                cliffheight = box(pos=vec(12, -5.5, 0), length=.1, height=10, width=1, color=color.white)
+                endofcliff = box(pos=vec(22, -10.5, 0), length=20, height=.1, width=1, color=color.white)
         elif evt.index is 2:
             #slope
             slopeslider = slider(min=(-pi/3), max=(pi/3), value=pi/4, length=300, bind=slopefunc)
             wtext(text='angle')
-            origin = vec(31, -.5, 0)
+            origin = vec(12, -0.5, 0)
             def slopefunc(evt):
                 console.log(evt)
                 direction = vec(cos(evt.value), sin(evt.value), 0) 
-                slopeangle.axis = (direction * 45)                       
+                slopeangle.axis = (direction * 20)                       
                 slopeangle.pos = (origin + 0.5 * slopeangle.axis) 
                     
-            slope = box(pos=vec(16, -.5, 0), length=30, height=.1, width=1, color=color.white)
-            slopeangle = box(pos=vec(47, 15.5, 0), length=45, height=.1, width=1,axis=vec(1,1,0), color=color.white)
-        elif evt.index is 3:
-            #loop
-            loopslider = slider(min=(6), max=(20), value=10, length=300, bind=loopfunc)
-            wtext(text='loop radius')
-            loop = box(pos=vec(16, -.5, 0), length=30, height=.1, width=1, color=color.white)
-            loopradius = helix(pos=vec(31, (5),-1), axis=vec(0,0,1), coils = 1, color=color.white, radius=6, thickness= 1)
-            loopradius.rotate (axis = vec(0, 0, 1), angle = (pi/2), origin = vec(loopradius.pos+loopradius.axis/2))
-            loop2 = box(pos=vec(46, -.5, -1), length=30, height=.1, width=1, color=color.white)
-            def loopfunc(evt):
-                console.log(evt)
-                loopradius.radius= evt.value
-                loopradius.pos= vec(31,evt.value-1,-1)
-                    
+            slope = box(pos=vec(7, -.5, 0), length=10, height=.1, width=1, color=color.white)
+            slopeangle = box(pos=vec(19, 6.5, 0), length=20, height=.1, width=1,axis=vec(1,1,0), color=color.white)
 presetlist = ['Pick a preset :)','Cliff', 'Slope', 'Loop', 'Coaster']
 menu(bind=presetselect, choices=presetlist)
 
@@ -237,20 +241,24 @@ initial_position_slider_text = wtext(text=f"Initial Position: {initial_position_
 
 def initial_velocity_slider_function(evt):
     global block
-    block.vel = evt.value
+    
+    block.vel = block.max_initial_vel * initial_velocity_slider.value # slider ranges from 0-1, acting as a percentage
     initial_velocity_slider_text.text = f"Initial Velocity: {evt.value}"
     
-initial_velocity_slider = slider(bind=initial_velocity_slider_function, min=0, max=3, value=1, length=200, pos=scene.caption_anchor)
+initial_velocity_slider = slider(bind=initial_velocity_slider_function, min=0, max=0.95, step=0.01, value=0.5, length=200, pos=scene.caption_anchor)
 initial_velocity_slider_text = wtext(text=f"Initial Velocity: {initial_velocity_slider.value}", pos=scene.caption_anchor)
 
-block = box(pos=vec(4, 0, 0), length=1, height=1, width=1, mass=20, vel=1)
+# need a mass slider
+block = box(pos=vec(4, 0, 0), length=1, height=1, width=1, mass=20, vel=-1, max_vel=-1)
 dt = 0.01
+t = 0
 
 equilibrium_point = sphere(pos=block.pos + vec(0,2,0), radius=0.5, color=color.green)
 
 # setup
 spring_slider_function(spring_slider)
 initial_velocity_slider_function(initial_velocity_slider)
+spring_slider.visible = False
 
 # assumed that: no sliders can be moved after the program has started
 # initial while loop for spring-oscillatory motion    
@@ -261,18 +269,22 @@ while (True):
     if (launch_button.launched): break
     if (not start_button.started): continue
 
-    k = calculate_equivalent_k(
-        spring_mode_button.is_series_mode, 
-        series_springs_list if spring_mode_button.is_series_mode else parallel_springs_list,
-        spring_slider.value
-    ) 
+    # update graphs
+#    K_curve.plot(t, 1/2 * block.mass * (block.vel**2))
+#    U_curve.plot(t, 1/2 * k * (block.pos.x - equilibrium_point.pos.x)**2)
+#    position_curve.plot(t, block.pos.x)
+    K_bar.data = [0, 1/2 * block.mass * (block.vel**2)]
+    
+    t += dt
+    
+    # euler's method
+    k = calculate_equivalent_k()
     force = -k * (block.pos.x - equilibrium_point.pos.x)
     acc = force / block.mass
     block.vel += acc
     block.pos.x += block.vel
     
     modify_springs()
-    
     
 # second while loop for projectile motion after block has been launched
 while (True):
