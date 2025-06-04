@@ -218,9 +218,6 @@ def presetselect(evt):
                 console.log(evt)
                 loopradius.radius= evt.value
                 loopradius.pos= vec(12,evt.value-1,-1)
-                
-            slope = box(pos=vec(7, -.5, 0), length=10, height=.1, width=1, color=color.white)
-            slopeangle = box(pos=vec(19, 6.5, 0), length=20, height=.1, width=1,axis=vec(1,1,0), color=color.white)
 presetlist = ['Pick a preset :)','Cliff', 'Slope', 'Loop', 'Coaster']
 menu(bind=presetselect, choices=presetlist)
 
