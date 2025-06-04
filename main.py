@@ -13,7 +13,12 @@ def start_button_function(evt):
     launch_button.disabled = False
 start_button = button(bind=start_button_function, text='Start', background=color.green, pos=scene.title_anchor, disabled=False, started=False)
 
+def set_launch_button():
+    global launch_button
+    launch_button.disabled = not (block.vel > 0)
+    
 def launch_button_function(evt):
+    if not (block.vel > 0): return
     launch_button.launched = True
     launch_button.disabled = True
 launch_button = button(bind=launch_button_function, text='Launch', background=color.blue, pos=scene.title_anchor, disabled=True, launched=False)
@@ -84,10 +89,10 @@ max_springs = 5
 init_spring_length = 2.5
 spring_radius = 1
 curve_thickness = 0.05
-num_coils = 4.5
+num_coils = 3.5
 # initialize the series springs
 series_springs_list = []
-horizontal_spacing = 1 # this is constant
+horizontal_spacing = 0.8 # this is constant
 spring_length = init_spring_length
 for i in range(max_springs):
     series_springs_list.append(
@@ -100,16 +105,23 @@ for i in range(max_springs):
           )  
     )
     
-# initialize the lines between the springs and block
-series_lines_list = []
-for i in range(max_springs+1):
-    left_point = vec(i*(horizontal_spacing+init_spring_length), 0, 0)
-    right_point = left_point + vec(horizontal_spacing,0,0)
-    out_point1 = left_point + vec(0, 0, -spring_radius)
-    out_point2 = right_point + vec(0, 0, spring_radius)
+    
+def create_connecting_curve_points(i, d, l):
+    r = spring_radius
+    left_point = vec(i*(d+l), 0, 0)
+    right_point = left_point + vec(d,0,0)
+    out_point1 = left_point + vec(0, 0, -r)
+    out_point2 = right_point + vec(0, 0, r)
     curve_points = [out_point1, left_point, right_point, out_point2]
     if i == 0:
         curve_points.pop(0)
+    
+    return curve_points
+    
+# initialize the lines between the springs and block
+series_lines_list = []
+for i in range(max_springs+1):
+    curve_points = create_connecting_curve_points(i, horizontal_spacing, init_spring_length)
     series_lines_list.append(
         curve(pos=curve_points,
               radius=curve_thickness,
@@ -129,10 +141,28 @@ parallel_lines_list = []
 # modify the springs based on the block's position
 def modify_springs(is_series_mode, springs_list, n):
     global horizontal_spacing, spring_length
+    
     if is_series_mode:
-        spring_length = block.pos.x - (n+1)*horizontal_spacing
-        for spring in springs_list:
-            spring.length = spring_length
+        global series_lines_list
+        d0 = horizontal_spacing
+        l0 = spring_length
+        
+        d = (block.pos.x - block.length/2) / (n+1 + n * (l0/d0))
+        l = l0/d0 * d
+        
+        for i, this_curve in enumerate(series_lines_list):
+            new_points = create_connecting_curve_points(i, d, l)
+            
+            assert this_curve.npoints == len(new_points)
+            for point_index in range(this_curve.npoints):
+                this_curve.modify(point_index, pos=new_points[point_index], color=color.red, radius=curve_thickness)
+
+        for i, spring in enumerate(springs_list):
+            spring.length = l
+            spring.pos.x = d + i * (l+d)
+    
+        print(f"{l=} {d=}")
+        
     else:
         pass
 
@@ -175,15 +205,6 @@ def presetselect(evt):
 presetlist = ['Pick a preset :)','Cliff', 'Slope', 'Loop', 'Coaster']
 menu(bind=presetselect, choices=presetlist)
 
-#loop
-#loopslider = slider(min=(1), max=(8), value=5, length=300, bind=loopfunc)
-#loop = box(pos=vec(7, -.5, 0), length=10, height=.1, width=1, color=color.white)
-#loopradius = helix(pos=vec(19, 6.5, 0), axis=vec(0,0,1), coils = 1, color=color.white, radius=4)
-#loopradius.rotate (axis = vec(0, 0, 1), angle = (pi/2), origin = loopradius.pos+loopradius.axis/2)
-#def loopfunc(evt):
-    #console.log(evt)
-    #loopradius.radius= evt.value
-
 def equilibrium_pos_slider_function(evt):
     global block
     block.x_equilibrium = equilibrium_pos_slider.value
@@ -207,6 +228,7 @@ equilibrium_shower = sphere(pos=block.pos + vec(0,2,0), radius=0.5, color=color.
 while (True):
     rate(1/dt)
     
+    set_launch_button()
     if (launch_button.launched): break
     if (not start_button.started): continue
         
@@ -230,4 +252,6 @@ while (True):
 # second while loop for projectile motion after block has been launched
 while (True):
     rate(1/dt)
+    
+    block.pos.x += block.vel
     pass
