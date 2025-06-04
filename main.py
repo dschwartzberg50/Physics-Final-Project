@@ -8,13 +8,15 @@ def start_button_function(evt):
     start_button.started = True
     start_button.disabled = True
     spring_slider.disabled = True
-    # put other sliders here later to be disabled
+    initial_velocity_slider.disabled = True
+    spring_mode_button.disabled = True
+    # put other UI elements here later to be disabled
     
     launch_button.disabled = False
 start_button = button(bind=start_button_function, text='Start', background=color.green, pos=scene.title_anchor, disabled=False, started=False)
 
-def set_launch_button():
-    global launch_button
+def update_launch_button():
+    global launch_button, block
     launch_button.disabled = not (block.vel > 0)
     
 def launch_button_function(evt):
@@ -69,8 +71,10 @@ def spring_slider_function(evt):
     global block, spring_length, horizontal_spacing
     total_length = horizontal_spacing + evt.value*(horizontal_spacing + spring_length)
     block.pos.x = total_length + block.length/2
+    
+    equilibrium_point.pos.x = block.pos.x
 
-spring_slider = slider(bind=spring_slider_function, min=1, max=5, step=1, value=1, length=200, id="spring_slider", pos=scene.caption_anchor)
+spring_slider = slider(bind=spring_slider_function, min=1, max=5, step=1, value=1, length=200, pos=scene.caption_anchor)
 spring_slider_text = wtext(text=f"Number of Springs: {spring_slider.value}", pos=scene.caption_anchor)
 
 box(pos=vec(0,0,0), height=10, width=0.1,length=0.1)
@@ -105,7 +109,6 @@ for i in range(max_springs):
           )  
     )
     
-    
 def create_connecting_curve_points(i, d, l):
     r = spring_radius
     left_point = vec(i*(d+l), 0, 0)
@@ -139,8 +142,11 @@ parallel_lines_list = []
 #    )
 
 # modify the springs based on the block's position
-def modify_springs(is_series_mode, springs_list, n):
-    global horizontal_spacing, spring_length
+def modify_springs():
+    global spring_mode_button, series_springs_list, parallel_springs_list, spring_slider, horizontal_spacing, spring_length
+    is_series_mode = spring_mode_button.is_series_mode
+    springs_list = series_springs_list if is_series_mode else parallel_springs_list
+    n = spring_slider.value
     
     if is_series_mode:
         global series_lines_list
@@ -160,8 +166,6 @@ def modify_springs(is_series_mode, springs_list, n):
         for i, spring in enumerate(springs_list):
             spring.length = l
             spring.pos.x = d + i * (l+d)
-    
-        print(f"{l=} {d=}")
         
     else:
         pass
@@ -205,48 +209,56 @@ def presetselect(evt):
 presetlist = ['Pick a preset :)','Cliff', 'Slope', 'Loop', 'Coaster']
 menu(bind=presetselect, choices=presetlist)
 
-def equilibrium_pos_slider_function(evt):
+# wip
+"""
+def initial_position_slider_function(evt):
     global block
-    block.x_equilibrium = equilibrium_pos_slider.value
-    equilibrium_pos_slider_text.text = f"Equilibrium Position: {equilibrium_pos_slider.value}"
-    
-    global equilibrium_shower
-    equilibrium_shower.pos.x = block.pos.x + equilibrium_pos_slider.value
-    
-equilibrium_pos_slider = slider(bind=equilibrium_pos_slider_function, min=-1, max=1, step=0.1, value=0, length=200, pos=scene.caption_anchor)
-equilibrium_pos_slider_text = wtext(text=f"Displacement from Equilibrium Position: {equilibrium_pos_slider.value}", pos=scene.caption_anchor)
+    block.pos.x = evt.value
+    initial_position_slider_Text.text = f"Initial Position: {block.pos.x}"
+    modify_springs()
 
-# note: need another slider for x_equilibrium position
-block_init_pos = 4
-block = box(pos=vec(block_init_pos, 0, 0), length=1, height=1, width=1, mass=20, vel=0, x_equilibrium=3)
+# min can't be 0 for the position
+initial_position_slider = slider(bind=initial_position_slider_function, min=0.5, max=10, value=2, length=200, pos=scene.caption_anchor)
+initial_position_slider_text = wtext(text=f"Initial Position: {initial_position_slider.value}", pos=scene.caption_anchor)
+"""
+
+def initial_velocity_slider_function(evt):
+    global block
+    block.vel = evt.value
+    initial_velocity_slider_text.text = f"Initial Velocity: {evt.value}"
+    
+initial_velocity_slider = slider(bind=initial_velocity_slider_function, min=0, max=3, value=1, length=200, pos=scene.caption_anchor)
+initial_velocity_slider_text = wtext(text=f"Initial Velocity: {initial_velocity_slider.value}", pos=scene.caption_anchor)
+
+block = box(pos=vec(4, 0, 0), length=1, height=1, width=1, mass=20, vel=1)
 dt = 0.01
 
-equilibrium_shower = sphere(pos=block.pos + vec(0,2,0), radius=0.5, color=color.green)
+equilibrium_point = sphere(pos=block.pos + vec(0,2,0), radius=0.5, color=color.green)
+
+# setup
+spring_slider_function(spring_slider)
+initial_velocity_slider_function(initial_velocity_slider)
 
 # assumed that: no sliders can be moved after the program has started
 # initial while loop for spring-oscillatory motion    
 while (True):
     rate(1/dt)
     
-    set_launch_button()
+    update_launch_button()
     if (launch_button.launched): break
     if (not start_button.started): continue
-        
+
     k = calculate_equivalent_k(
         spring_mode_button.is_series_mode, 
         series_springs_list if spring_mode_button.is_series_mode else parallel_springs_list,
         spring_slider.value
     ) 
-    force = -k * (block.pos.x - block.x_equilibrium)
+    force = -k * (block.pos.x - equilibrium_point.pos.x)
     acc = force / block.mass
     block.vel += acc
     block.pos.x += block.vel
     
-    modify_springs(
-        spring_mode_button.is_series_mode, 
-        series_springs_list if spring_mode_button.is_series_mode else parallel_springs_list,
-        spring_slider.value
-    )
+    modify_springs()
     
     
 # second while loop for projectile motion after block has been launched
