@@ -183,41 +183,42 @@ def presetselect(evt):
                 pass
         elif evt.index is 1:
                 #cliff
-                cliffheightslider = slider( bind=cliffheightfunc, min=5, max=25 )
+                cliffheightslider = slider( bind=cliffheightfunc, min=5, max=50, value = 30 )
                 wtext(text='height')
                 def cliffheightfunc(evt):
                     console.log(evt)
                     cliffheight.height = evt.value
                     cliffheight.pos.y = -evt.value/2-.5
                     endofcliff.pos.y = -evt.value-.5
-                cliff = box(pos=vec(7, -.5, 0), length=10, height=.1, width=1, color=color.white)
-                cliffheight = box(pos=vec(12, -5.5, 0), length=.1, height=10, width=1, color=color.white)
-                endofcliff = box(pos=vec(22, -10.5, 0), length=20, height=.1, width=1, color=color.white)
+                cliff = box(pos=vec(15, -.5, 0), length=30, height=.1, width=1, color=color.white)
+                cliffheight = box(pos=vec(30, -15.5, 0), length=.1, height=30, width=1, color=color.white)
+                endofcliff = box(pos=vec(60, -30.5, 0), length=60, height=.1, width=1, color=color.white)
         elif evt.index is 2:
             #slope
             slopeslider = slider(min=(-pi/3), max=(pi/3), value=pi/4, length=300, bind=slopefunc)
             wtext(text='angle')
-            origin = vec(12, -0.5, 0)
+            origin = vec(31, -.5, 0)
             def slopefunc(evt):
                 console.log(evt)
                 direction = vec(cos(evt.value), sin(evt.value), 0) 
-                slopeangle.axis = (direction * 20)                       
+                slopeangle.axis = (direction * 45)                       
                 slopeangle.pos = (origin + 0.5 * slopeangle.axis) 
                     
-            slope = box(pos=vec(7, -.5, 0), length=10, height=.1, width=1, color=color.white)
-            slopeangle = box(pos=vec(19, 6.5, 0), length=20, height=.1, width=1,axis=vec(1,1,0), color=color.white)
+            slope = box(pos=vec(16, -.5, 0), length=30, height=.1, width=1, color=color.white)
+            slopeangle = box(pos=vec(47, 15.5, 0), length=45, height=.1, width=1,axis=vec(1,1,0), color=color.white)
         elif evt.index is 3:
             #loop
-            loopslider = slider(min=(3), max=(10), value=6, length=300, bind=loopfunc)
+            loopslider = slider(min=(6), max=(20), value=10, length=300, bind=loopfunc)
             wtext(text='loop radius')
-            loop = box(pos=vec(7, -.5, 0), length=10, height=.1, width=1, color=color.white)
-            loopradius = helix(pos=vec(12, (3),-1), axis=vec(0,0,1), coils = 1, color=color.white, radius=4, thickness= 1)
+            loop = box(pos=vec(16, -.5, 0), length=30, height=.1, width=1, color=color.white)
+            loopradius = helix(pos=vec(31, (5),-1), axis=vec(0,0,1), coils = 1, color=color.white, radius=6, thickness= 1)
             loopradius.rotate (axis = vec(0, 0, 1), angle = (pi/2), origin = vec(loopradius.pos+loopradius.axis/2))
-            loop2 = box(pos=vec(17, -.5, -1), length=10, height=.1, width=1, color=color.white)
+            loop2 = box(pos=vec(46, -.5, -1), length=30, height=.1, width=1, color=color.white)
             def loopfunc(evt):
                 console.log(evt)
                 loopradius.radius= evt.value
-                loopradius.pos= vec(12,evt.value-1,-1)
+                loopradius.pos= vec(31,evt.value-1,-1)
+                    
 presetlist = ['Pick a preset :)','Cliff', 'Slope', 'Loop', 'Coaster']
 menu(bind=presetselect, choices=presetlist)
 
