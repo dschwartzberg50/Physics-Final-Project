@@ -206,6 +206,23 @@ def presetselect(evt):
                     
             slope = box(pos=vec(7, -.5, 0), length=10, height=.1, width=1, color=color.white)
             slopeangle = box(pos=vec(19, 6.5, 0), length=20, height=.1, width=1,axis=vec(1,1,0), color=color.white)
+         elif evt.index is 3:
+            #loop
+            loopslider = slider(min=(3), max=(10), value=6, length=300, bind=loopfunc)
+            wtext(text='loop radius')
+            loop = box(pos=vec(7, -.5, 0), length=10, height=.1, width=1, color=color.white)
+            loopradius = helix(pos=vec(12, (3),-1), axis=vec(0,0,1), coils = 1, color=color.white, radius=4, thickness= 1)
+            loopradius.rotate (axis = vec(0, 0, 1), angle = (pi/2), origin = vec(loopradius.pos+loopradius.axis/2))
+            loop2 = box(pos=vec(17, -.5, -1), length=10, height=.1, width=1, color=color.white)
+            def loopfunc(evt):
+                console.log(evt)
+                loopradius.radius= evt.value
+                loopradius.pos= vec(12,evt.value-1,-1)
+                    
+            slope = box(pos=vec(7, -.5, 0), length=10, height=.1, width=1, color=color.white)
+            slopeangle = box(pos=vec(19, 6.5, 0), length=20, height=.1, width=1,axis=vec(1,1,0), color=color.white)
+presetlist = ['Pick a preset :)','Cliff', 'Slope', 'Loop', 'Coaster']
+menu(bind=presetselect, choices=presetlist)
 presetlist = ['Pick a preset :)','Cliff', 'Slope', 'Loop', 'Coaster']
 menu(bind=presetselect, choices=presetlist)
 
