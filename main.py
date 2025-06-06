@@ -207,10 +207,11 @@ def modify_springs():
     springs_list = series_springs_list if is_series_mode else parallel_springs_list
     n = spring_slider.value
     
+    d0 = horizontal_spacing
+    l0 = spring_length
+    
     if is_series_mode:
         global series_lines_list
-        d0 = horizontal_spacing
-        l0 = spring_length
         
         d = (block.pos.x - block.length/2) / (n+1 + n * (l0/d0))
         l = l0/d0 * d
@@ -226,11 +227,28 @@ def modify_springs():
             spring.length = l
             spring.pos.x = d + i * (l+d)
         
-        spring_length = l
-        horizontal_spacing = d
-        
     else:
-        pass
+        # this might be a little broken
+        global parallel_lines_list
+        
+        l = (block.pos.x - block.length/2) / (2*d0/l0 + 1)
+        d = d0/l0 * l
+        
+        for i, (c1, c2) in enumerate(parallel_lines_list):
+            points1 = create_parallel_curve_points(i, vertical_spacing, d, l, False)
+            for point_index in range(c1.npoints):
+                c1.modify(point_index, pos=points1[point_index], color=color.red, radius=curve_thickness)
+                
+            points2 = create_parallel_curve_points(i, vertical_spacing, d, l, True)
+            for point_index in range(c2.npoints):
+                c2.modify(point_index, pos=points2[point_index], color=color.red, radius=curve_thickness)
+
+        for i, spring in enumerate(springs_list):
+            spring.length = l
+            spring.pos = vec(horizontal_spacing, i * (2*spring_radius + vertical_spacing), 0)
+    
+    spring_length = l
+    horizontal_spacing = d
 
 def calculate_equivalent_k():
     global series_springs_list, parallel_springs_list, spring_slider
@@ -337,18 +355,15 @@ cliffheightslider.disabled = True
 loopslider.disabled = True
 slopeslider.disabled = True
 
-# wip
-"""
-def initial_position_slider_function(evt):
-    global block
-    block.pos.x = evt.value
-    initial_position_slider_Text.text = f"Initial Position: {block.pos.x}"
-    modify_springs()
-
-# min can't be 0 for the position
-initial_position_slider = slider(bind=initial_position_slider_function, min=0.5, max=10, value=2, length=200, pos=scene.caption_anchor)
-initial_position_slider_text = wtext(text=f"Initial Position: {initial_position_slider.value}", pos=scene.caption_anchor)
-"""
+#def initial_position_slider_function(evt):
+#    global block
+#    
+#    block.pos.x = evt.value * block.max_initial_position
+#    initial_velocity_slider_text.text = f"Initial Velocity: {evt.value}"
+#    
+#initial_position_slider = slider(bind=initial_position_slider_function, min=0.05, max=1, step=0.01, value=0.5, length=200, pos=scene.caption_anchor)
+#initial_position_slider_text = wtext(text=f"Initial Position", pos=scene.caption_anchor)
+#
 
 def initial_velocity_slider_function(evt):
     global block
