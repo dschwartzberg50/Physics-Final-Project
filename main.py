@@ -375,7 +375,7 @@ initial_velocity_slider = slider(bind=initial_velocity_slider_function, min=0, m
 initial_velocity_slider_text = wtext(text=f"Initial Velocity: {initial_velocity_slider.value}", pos=scene.caption_anchor)
 
 # need a mass slider
-wall = box(pos=vec(0,0,0), height=10, width=5,length=0.1)
+wall = box(pos=vec(0,12.5/2,0), height=15, width=5,length=0.1)
 block = box(pos=vec(4, 0, 0), length=1, height=2*spring_radius, width=1, mass=20, vel=-1, max_initial_vel=-1)
 dt = 0.01
 t = 0
