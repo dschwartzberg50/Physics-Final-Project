@@ -246,33 +246,96 @@ def presetselect(evt):
         console.log(evt)
         if evt.index < 1:
                 pass
-        elif evt.index == 1:
-                #cliff
-                cliffheightslider = slider( bind=cliffheightfunc, min=5, max=25 )
-                wtext(text='height')
-                def cliffheightfunc(evt):
-                    console.log(evt)
-                    cliffheight.height = evt.value
-                    cliffheight.pos.y = -evt.value/2-.5
-                    endofcliff.pos.y = -evt.value-.5
-                cliff = box(pos=vec(7, -.5, 0), length=10, height=.1, width=1, color=color.white)
-                cliffheight = box(pos=vec(12, -5.5, 0), length=.1, height=10, width=1, color=color.white)
-                endofcliff = box(pos=vec(22, -10.5, 0), length=20, height=.1, width=1, color=color.white)
-        elif evt.index == 2:
-            #slope
-            slopeslider = slider(min=(-pi/3), max=(pi/3), value=pi/4, length=300, bind=slopefunc)
-            wtext(text='angle')
-            origin = vec(12, -0.5, 0)
-            def slopefunc(evt):
-                console.log(evt)
-                direction = vec(cos(evt.value), sin(evt.value), 0) 
-                slopeangle.axis = (direction * 20)                       
-                slopeangle.pos = (origin + 0.5 * slopeangle.axis) 
+        elif evt.index is 1:
+            cliff.visible = True
+            cliffheight.visible = True
+            endofcliff.visible = True
+            slope.visible = False
+            slopeangle.visible = False
+            loopradius.visible = False
+            loop.visible = False
+            loop2.visible = False
+            cliffheightslider.disabled = False
+            loopslider.disabled = True
+            slopeslider.disabled = True
+        elif evt.index is 2:
+            cliff.visible = False
+            cliffheight.visible = False
+            endofcliff.visible = False
+            slope.visible = True
+            slopeangle.visible = True
+            loopradius.visible = False
+            loop.visible = False
+            loop2.visible = False
+            cliffheightslider.disabled = True
+            loopslider.disabled = True
+            slopeslider.disabled = False
+        elif evt.index is 3:
+            cliffheightslider.disabled = True
+            loopslider.disabled = False
+            slopeslider.disabled = True
+            cliff.visible = False
+            cliffheight.visible = False
+            endofcliff.visible = False
+            slope.visible = False
+            slopeangle.visible = False
+            loopradius.visible = True
+            loop.visible = True
+            loop2.visible = True
+            
                     
-            slope = box(pos=vec(7, -.5, 0), length=10, height=.1, width=1, color=color.white)
-            slopeangle = box(pos=vec(19, 6.5, 0), length=20, height=.1, width=1,axis=vec(1,1,0), color=color.white)
 presetlist = ['Pick a preset :)','Cliff', 'Slope', 'Loop', 'Coaster']
 menu(bind=presetselect, choices=presetlist)
+
+#set up shapes
+cliff = box(pos=vec(15, -.5, 0), length=30, height=.1, width=1, color=color.white)
+cliffheight = box(pos=vec(30, -15.5, 0), length=.1, height=30, width=1, color=color.white)
+endofcliff = box(pos=vec(60, -30.5, 0), length=60, height=.1, width=1, color=color.white)
+slope = box(pos=vec(16, -.5, 0), length=30, height=.1, width=1, color=color.white)
+slopeangle = box(pos=vec(47, 15.5, 0), length=45, height=.1, width=1,axis=vec(1,1,0), color=color.white)
+loop = box(pos=vec(16, -.5, 0), length=30, height=.1, width=1, color=color.white)
+loopradius = helix(pos=vec(31, (5),-1), axis=vec(0,0,1), coils = 1, color=color.white, radius=6, thickness= 1)
+loopradius.rotate (axis = vec(0, 0, 1), angle = (pi/2), origin = vec(loopradius.pos+loopradius.axis/2))
+loop2 = box(pos=vec(46, -.5, -1), length=30, height=.1, width=1, color=color.white)
+#cliff
+def cliffheightfunc(evt):
+    console.log(evt)
+    cliffheight.height = evt.value
+    cliffheight.pos.y = -evt.value/2-.5
+    endofcliff.pos.y = -evt.value-.5
+#slope                    
+origin = vec(31, -.5, 0)
+def slopefunc(evt):
+    console.log(evt)
+    direction = vec(cos(evt.value), sin(evt.value), 0) 
+    slopeangle.axis = (direction * 45)                       
+    slopeangle.pos = (origin + 0.5 * slopeangle.axis) 
+#loop
+def loopfunc(evt):
+                console.log(evt)
+                loopradius.radius= evt.value
+                loopradius.pos= vec(31,evt.value-1,-1)
+#sliders
+scene.append_to_caption('\n')
+cliffheightslider = slider( bind=cliffheightfunc, min=5, max=50, value = 30, length = 500, pos=scene.caption_anchor) 
+wtext(text='height')
+scene.append_to_caption('\n')
+slopeslider = slider(min=(-pi/3), max=(pi/3), value=pi/4, length=500, bind=slopefunc, pos=scene.caption_anchor)
+wtext(text='angle')
+scene.append_to_caption('\n')
+loopslider = slider(min=(6), max=(20), value=10, length=500, bind=loopfunc, pos=scene.caption_anchor)
+wtext(text='loop radius')
+cliff.visible = False
+cliffheight.visible = False
+endofcliff.visible = False
+slope.visible = False
+slopeangle.visible = False
+loopradius.visible = False
+loop.visible = False
+loop2.visible = False
+cliffheightslider.disabled = True
+loopslider.disabled = True
+slopeslider.disabled = True
 
 # wip
 """
