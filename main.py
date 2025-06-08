@@ -260,30 +260,25 @@ def calculate_equivalent_k():
         return sum(spring.k for spring in springs_list[:n])
         
 #presets dropdown
+scene.append_to_caption("     ")
 def presetselect(evt):
         console.log(evt)
         if evt.index < 1:
                 pass
         elif evt.index is 1:
-            cliff.visible = True
             cliffheight.visible = True
             endofcliff.visible = True
-            slope.visible = False
             slopeangle.visible = False
             loopradius.visible = False
-            loop.visible = False
             loop2.visible = False
             cliffheightslider.disabled = False
             loopslider.disabled = True
             slopeslider.disabled = True
         elif evt.index is 2:
-            cliff.visible = False
             cliffheight.visible = False
             endofcliff.visible = False
-            slope.visible = True
             slopeangle.visible = True
             loopradius.visible = False
-            loop.visible = False
             loop2.visible = False
             cliffheightslider.disabled = True
             loopslider.disabled = True
@@ -292,13 +287,10 @@ def presetselect(evt):
             cliffheightslider.disabled = True
             loopslider.disabled = False
             slopeslider.disabled = True
-            cliff.visible = False
             cliffheight.visible = False
             endofcliff.visible = False
-            slope.visible = False
             slopeangle.visible = False
             loopradius.visible = True
-            loop.visible = True
             loop2.visible = True
             
                     
@@ -306,23 +298,21 @@ presetlist = ['Pick a preset :)','Cliff', 'Slope', 'Loop', 'Coaster']
 menu(bind=presetselect, choices=presetlist)
 
 #set up shapes
-cliff = box(pos=vec(15, -.5, 0), length=30, height=.1, width=1, color=color.white)
-cliffheight = box(pos=vec(30, -15.5, 0), length=.1, height=30, width=1, color=color.white)
-endofcliff = box(pos=vec(60, -30.5, 0), length=60, height=.1, width=1, color=color.white)
-slope = box(pos=vec(16, -.5, 0), length=30, height=.1, width=1, color=color.white)
-slopeangle = box(pos=vec(47, 15.5, 0), length=45, height=.1, width=1,axis=vec(1,1,0), color=color.white)
-loop = box(pos=vec(16, -.5, 0), length=30, height=.1, width=1, color=color.white)
-loopradius = helix(pos=vec(31, (5),-1), axis=vec(0,0,1), coils = 1, color=color.white, radius=6, thickness= 1)
+start = box(pos=vec(15, -1, 0), length=30, height=.1, width=1, color=color.white)
+cliffheight = box(pos=vec(30, -16, 0), length=.1, height=30, width=1, color=color.white)
+endofcliff = box(pos=vec(60, -31, 0), length=60, height=.1, width=1, color=color.white)
+slopeangle = box(pos=vec(46, 15, 0), length=45, height=.1, width=1,axis=vec(1,1,0), color=color.white)
+loopradius = helix(pos=vec(30, (4.5),-1), axis=vec(0,0,1), coils = 1, color=color.white, radius=6, thickness= 1)
 loopradius.rotate (axis = vec(0, 0, 1), angle = (pi/2), origin = vec(loopradius.pos+loopradius.axis/2))
-loop2 = box(pos=vec(46, -.5, -1), length=30, height=.1, width=1, color=color.white)
+loop2 = box(pos=vec(45, -1, -1), length=30, height=.1, width=1, color=color.white)
 #cliff
 def cliffheightfunc(evt):
     console.log(evt)
     cliffheight.height = evt.value
-    cliffheight.pos.y = -evt.value/2-.5
-    endofcliff.pos.y = -evt.value-.5
+    cliffheight.pos.y = -evt.value/2-1
+    endofcliff.pos.y = -evt.value-1
 #slope                    
-origin = vec(31, -.5, 0)
+origin = vec(30, -1, 0)
 def slopefunc(evt):
     console.log(evt)
     direction = vec(cos(evt.value), sin(evt.value), 0) 
@@ -343,13 +333,10 @@ wtext(text='angle')
 scene.append_to_caption('\n')
 loopslider = slider(min=(6), max=(20), value=10, length=500, bind=loopfunc, pos=scene.caption_anchor)
 wtext(text='loop radius')
-cliff.visible = False
 cliffheight.visible = False
 endofcliff.visible = False
-slope.visible = False
 slopeangle.visible = False
 loopradius.visible = False
-loop.visible = False
 loop2.visible = False
 cliffheightslider.disabled = True
 loopslider.disabled = True
