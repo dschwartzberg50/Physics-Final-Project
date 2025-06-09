@@ -9,9 +9,10 @@ def start_button_function(evt):
     spring_slider.disabled = True
     initial_velocity_slider.disabled = True
     spring_mode_button.disabled = True
+    preset_menu.disabled = True
+    launch_button.disabled = True
     # put other UI elements here later to be disabled
     
-    launch_button.disabled = False
 start_button = button(bind=start_button_function, text='Start', background=color.green, pos=scene.title_anchor, disabled=False, started=False)
 
 def update_launch_button():
@@ -85,6 +86,12 @@ def spring_slider_function(evt):
     k = calculate_equivalent_k()
     block.max_initial_vel = sqrt(k/block.mass * (block.pos.x**2))
     initial_velocity_slider_function(initial_velocity_slider)
+    
+    global spring_constants_sliders
+    # set the first n spring constant sliders to be on
+    for i in range(len(spring_constants_sliders)):
+        spring_constants_sliders[i].disabled = (not (i < evt.value))
+    
 
 spring_slider = slider(bind=spring_slider_function, min=1, max=5, step=1, value=1, length=200, pos=scene.caption_anchor)
 spring_slider_text = wtext(text=f"Number of Springs: {spring_slider.value}", pos=scene.caption_anchor)
@@ -258,14 +265,43 @@ def calculate_equivalent_k():
         return 1 / sum(1/spring.k for spring in springs_list[:n])
     else:
         return sum(spring.k for spring in springs_list[:n])
-        
+
+def adjust_spring_constant(evt):
+    idx = evt.id
+    spring_constants_texts[idx].text = f"Spring #{idx+1}: k={evt.value}"
+    
+    global series_springs_list, parallel_springs_list
+    springs_list = series_springs_list if spring_mode_button.is_series_mode else parallel_springs_list
+    # adjust the actual spring
+    springs_list[idx].k = evt.value
+    
+    # adjust the color maybe ?!?!
+    pass
+    
+# adjust these later
+min_k = 1
+max_k = 5
+# spring constants sliders
+spring_constants_sliders = []
+spring_constants_texts = []
+for i in range(max_springs):
+    scene.append_to_caption("\n")
+    spring_constants_sliders.append(
+        slider(bind=adjust_spring_constant, min=min_k, max=max_k, step=0.1, value=1, length=200, pos=scene.caption_anchor, id=i)
+    )
+    spring_constants_sliders[i].disabled = True # this doesn't work in the initialization of the slider for some reason :)
+    
+    spring_constants_texts.append(
+        wtext(text=f"Spring #{i+1}: k={spring_constants_sliders[i].value}", pos=scene.caption_anchor)
+    )
+scene.append_to_caption("\n")
+    
 #presets dropdown
 scene.append_to_caption("     ")
 def presetselect(evt):
-        console.log(evt)
         if evt.index < 1:
                 pass
-        elif evt.index is 1:
+        elif evt.index == 1:
             cliffheight.visible = True
             endofcliff.visible = True
             slopeangle.visible = False
@@ -274,7 +310,7 @@ def presetselect(evt):
             cliffheightslider.disabled = False
             loopslider.disabled = True
             slopeslider.disabled = True
-        elif evt.index is 2:
+        elif evt.index == 2:
             cliffheight.visible = False
             endofcliff.visible = False
             slopeangle.visible = True
@@ -283,7 +319,7 @@ def presetselect(evt):
             cliffheightslider.disabled = True
             loopslider.disabled = True
             slopeslider.disabled = False
-        elif evt.index is 3:
+        elif evt.index == 3:
             cliffheightslider.disabled = True
             loopslider.disabled = False
             slopeslider.disabled = True
@@ -295,7 +331,7 @@ def presetselect(evt):
             
                     
 presetlist = ['Pick a preset :)','Cliff', 'Slope', 'Loop', 'Coaster']
-menu(bind=presetselect, choices=presetlist)
+preset_menu = menu(bind=presetselect, choices=presetlist)
 
 #set up shapes
 start = box(pos=vec(15, -1, 0), length=30, height=.1, width=1, color=color.white)
@@ -307,20 +343,17 @@ loopradius.rotate (axis = vec(0, 0, 1), angle = (pi/2), origin = vec(loopradius.
 loop2 = box(pos=vec(45, -1, -1), length=30, height=.1, width=1, color=color.white)
 #cliff
 def cliffheightfunc(evt):
-    console.log(evt)
     cliffheight.height = evt.value
     cliffheight.pos.y = -evt.value/2-1
     endofcliff.pos.y = -evt.value-1
 #slope                    
 origin = vec(30, -1, 0)
 def slopefunc(evt):
-    console.log(evt)
     direction = vec(cos(evt.value), sin(evt.value), 0) 
     slopeangle.axis = (direction * 45)                       
     slopeangle.pos = (origin + 0.5 * slopeangle.axis) 
 #loop
 def loopfunc(evt):
-                console.log(evt)
                 loopradius.radius= evt.value
                 loopradius.pos= vec(31,evt.value-1,-1)
 #sliders
@@ -429,7 +462,10 @@ while (True):
     block.vel += acc
     block.pos.x += block.vel
     
+    # update the entire spring setup
     modify_springs()
+    
+launch_button.disabled = True
     
 # second while loop for projectile motion after block has been launched
 while (True):
