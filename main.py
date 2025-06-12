@@ -28,25 +28,108 @@ def start_button_function(evt):
     # enable the user to press the launch button
     launch_button.disabled = False
 scene.append_to_caption(left_margin)
-start_button = button(bind=start_button_function, text='Start', background=color.green, pos=scene.caption_anchor)
-start_button.disabled = False
-start_button.started = False
+start_button = button(bind=start_button_function, text="Start", background=color.green, pos=scene.caption_anchor)
 
 # launch button
 def launch_button_function(evt):
     launch_button.about_to_launch = True
     launch_button.disabled = True
 scene.append_to_caption(" ")
-launch_button = button(bind=launch_button_function, text='Launch', background=color.blue, pos=scene.caption_anchor)
-launch_button.disabled = True
-launch_button.launched = False
-launch_button.about_to_launch = False
+launch_button = button(bind=launch_button_function, text="Launch", background=color.blue, pos=scene.caption_anchor)
 
-# reset button (TODO)
+# reset button; also used to initialize all sliders, buttons, and objects
 def reset_button_function(evt):
-    # block.pos = INIT_BLOCK_POS
+    start_button.disabled = False
+    start_button.started = False
     
-    pass
+    launch_button.disabled = True
+    launch_button.launched = False
+    launch_button.about_to_launch = False
+    
+    spring_mode_button.disabled = False
+    spring_mode_button.is_series_mode = False
+    spring_mode_button_function(spring_mode_button)
+    
+    spring_slider.disabled = False
+    spring_slider.value = 1
+    spring_slider_function(spring_slider)
+    
+    for spring_constants_slider in spring_constants_sliders:
+        spring_constants_slider.disabled = False
+        spring_constants_slider.value = 1
+        spring_constant_slider_function(spring_constants_slider)
+    
+    mass_slider.disabled = False
+    mass_slider.value = 20
+    mass_slider_function(mass_slider)
+    
+    initial_velocity_slider.disabled = False
+    initial_velocity_slider.value = 0.5
+    initial_velocity_slider_function(initial_velocity_slider)
+    
+    friction_slider.disabled = False
+    friction_slider.value = 0
+    friction_slider_function(friction_slider)
+    
+    horizontal_spacing = INIT_HORIZONTAL_SPACING
+    
+    # TODO: this breaks on reset for some reason
+    for i, series_spring in enumerate(series_springs_list):
+        series_spring.pos = vec(horizontal_spacing + i * (INIT_SPRING_LENGTH + horizontal_spacing), 0, 0)
+        series_spring.axis = vec(INIT_SPRING_LENGTH, 0, 0)
+
+    for i, this_curve in enumerate(series_lines_list):
+        curve_points = create_series_curve_points(i, horizontal_spacing, INIT_SPRING_LENGTH)
+        assert this_curve.npoints == len(curve_points)
+        for point_index in range(this_curve.npoints):
+            this_curve.modify(point_index, pos=curve_points[point_index], color=color.red, radius=CURVE_THICKNESS)
+    
+    # TODO: reset parallel springs stuff as well
+    
+    preset_menu.disabled = False
+    preset_menu.index = 0
+    preset_select(preset_menu)
+    
+    cliffheightslider.value = 30
+    cliffheightfunc(cliffheightslider)
+    
+    slopeslider.value = pi/4
+    slopefunc(slopeslider)
+    
+    loopslider.value = 10
+    loopfunc(loopslider)
+    
+    block.height = VERTICAL_SPACING + 2*SPRING_RADIUS
+    block.pos = vec(4, (block.height - 2*SPRING_RADIUS) / 2, 0)
+    
+    equilibrium_point.pos = block.pos + vec(0, block.height/2 + HEIGHT_ABOVE_BLOCK, 0)
+    
+    global energy_graph
+    energy_graph.delete()
+    energy_graph = graph(width=300, height=350, title="Energy vs Time", xtitle="Time", ytitle="Energy", align="right")
+    
+    global K_curve
+    K_curve.delete()
+    K_curve = gcurve(graph=energy_graph, label="Kinetic Energy", color=color.green)
+    K_data = []
+    
+    global U_curve
+    U_curve.delete()
+    U_curve = gcurve(graph=energy_graph, label="Potential Energy", color=color.red)
+    U_data = []
+    
+    global pos_graph
+    pos_graph.delete()
+    pos_graph = graph(width=300, height=350, title="Position vs Time", xtitle="Time", ytitle="Position", align="right")
+    
+    global pos_curve
+    pos_curve.delete()
+    pos_curve = gcurve(graph=pos_graph, label="Position", color=color.blue)
+    pos_data = []
+    
+    global t
+    t = 0
+    
 scene.append_to_caption(" ")
 reset_button = button(bind=reset_button_function, text="Reset", background=color.yellow, pos=scene.caption_anchor)
 
@@ -135,7 +218,7 @@ def spring_slider_function(evt):
     block.pos.y = (block.height - 2*SPRING_RADIUS) / 2
     
     # set the x-position of the equilibrium point (always the initial x-position of the block)
-    equilibrium_point.pos = block.pos + vec(0, block.height/2 + equilibrium_point_height_above_block, 0)
+    equilibrium_point.pos = block.pos + vec(0, block.height/2 + HEIGHT_ABOVE_BLOCK, 0)
     
     # calculate and set the maximum intiial velocity of the block so it doesn't go past x=0
     k = calculate_equivalent_k()
@@ -145,8 +228,8 @@ def spring_slider_function(evt):
     # set the first n spring constant sliders to be on
     for i in range(len(spring_constants_sliders)):
         spring_constants_sliders[i].disabled = (not (i < evt.value))
-spring_slider = slider(bind=spring_slider_function, min=1, max=5, step=1, value=1, length=slider_length, pos=scene.caption_anchor)
-spring_slider_text = wtext(text=f"Number of Springs: {spring_slider.value:.0f}", pos=scene.caption_anchor)
+spring_slider = slider(bind=spring_slider_function, min=1, max=5, step=1, length=slider_length, pos=scene.caption_anchor)
+spring_slider_text = wtext(text="", pos=scene.caption_anchor)
 
 # sliders for spring constants (k values)
 def spring_constant_slider_function(evt):
@@ -169,7 +252,7 @@ for i in range(spring_slider.max):
     spring_constants_sliders[i].id = i
     
     spring_constants_texts.append(
-        wtext(text=f"Spring #{i+1}: k={spring_constants_sliders[i].value:.1f}", pos=scene.caption_anchor)
+        wtext(text="", pos=scene.caption_anchor)
     )
     
 def calculate_equivalent_k():
@@ -185,8 +268,8 @@ scene.append_to_caption("\n")
 # mass of block slider
 def mass_slider_function(evt):
     mass_slider_text.text = f"Mass: {mass_slider.value:.0f}"
-mass_slider = slider(bind=mass_slider_function, min=10, max=50, step=1, value=20, length=slider_length, pos=scene.caption_anchor)
-mass_slider_text = wtext(text=f"Mass: {mass_slider.value}", pos=scene.caption_anchor)
+mass_slider = slider(bind=mass_slider_function, min=10, max=50, step=1, length=slider_length, pos=scene.caption_anchor)
+mass_slider_text = wtext(text="", pos=scene.caption_anchor)
 
 scene.append_to_caption("\n")
 
@@ -194,7 +277,7 @@ scene.append_to_caption("\n")
 def initial_velocity_slider_function(evt):
     block.vel = block.max_initial_vel * initial_velocity_slider.value # slider ranges from 0-1, acting as a percentage
     initial_velocity_slider_text.text = f"Initial Velocity: {block.vel:.2f}"    
-initial_velocity_slider = slider(bind=initial_velocity_slider_function, min=0, max=0.95, step=0.01, value=0.5, length=slider_length, pos=scene.caption_anchor)
+initial_velocity_slider = slider(bind=initial_velocity_slider_function, min=0, max=0.95, step=0.01, length=slider_length, pos=scene.caption_anchor)
 initial_velocity_slider_text = wtext(text=f"Initial Velocity: {-4000}", pos=scene.caption_anchor)
 
 scene.append_to_caption("\n")
@@ -202,8 +285,8 @@ scene.append_to_caption("\n")
 # coefficient of friction slider
 def friction_slider_function(evt):
     friction_slider_text.text = f"Coefficient of Friction: {evt.value:.2f}"
-friction_slider = slider(bind=friction_slider_function, min=0, max=1, step=0.01, value=0, length=slider_length, pos=scene.caption_anchor)
-friction_slider_text = wtext(text=f"Coefficient of Friction: {friction_slider.value}", pos=scene.caption_anchor)
+friction_slider = slider(bind=friction_slider_function, min=0, max=1, step=0.01, length=slider_length, pos=scene.caption_anchor)
+friction_slider_text = wtext(text=f"", pos=scene.caption_anchor)
 
 scene.append_to_caption("\n")
 scene.append_to_caption("\n")
@@ -217,7 +300,8 @@ CURVE_THICKNESS = 0.05
 NUM_COILS = 3.5 # must be 0.5 + n because half a coil looks good ! 
 VERTICAL_SPACING = 0.8 # for parallel only
 # non-constant
-horizontal_spacing = 0.8
+INIT_HORIZONTAL_SPACING = 0.8
+horizontal_spacing = INIT_HORIZONTAL_SPACING
 
 # returns a list of curve points to be used as the intermediate segments between springs (and the wall/block) in series mode
 def create_series_curve_points(i, d, l):
@@ -369,7 +453,7 @@ def preset_select(evt):
         loopradius.visible = True
         loop2.visible = True
 scene.append_to_caption(left_margin)
-preset_menu = menu(bind=preset_select, choices=preset_list, index=0)
+preset_menu = menu(bind=preset_select, choices=preset_list)
 
 scene.append_to_caption("\n")
 
@@ -389,7 +473,7 @@ def cliffheightfunc(evt):
     cliffheight.height = evt.value
     cliffheight.pos.y = -evt.value/2-1
     endofcliff.pos.y = -evt.value-1
-cliffheightslider = slider(bind=cliffheightfunc, min=5, max=50, value=30, step=1, length=slider_length, pos=scene.caption_anchor) 
+cliffheightslider = slider(bind=cliffheightfunc, min=5, max=50,  step=1, length=slider_length, pos=scene.caption_anchor) 
 cliff_height_slider_text = wtext(text=f"Height: {cliffheightslider.value}", pos=scene.caption_anchor)
 
 scene.append_to_caption("\n")
@@ -402,8 +486,8 @@ def slopefunc(evt):
 
     origin = vec(30, -1, 0)       
     slopeangle.pos = (origin + 0.5 * slopeangle.axis) 
-slopeslider = slider(bind=slopefunc, min=(-pi/3), max=(pi/3), value=pi/4, length=slider_length, pos=scene.caption_anchor)
-slope_angle_slider_text = wtext(text=f"Angle (degrees): {degrees(slopeslider.value):.0f}")
+slopeslider = slider(bind=slopefunc, min=(-pi/3), max=(pi/3), length=slider_length, pos=scene.caption_anchor)
+slope_angle_slider_text = wtext(text="", pos=scene.caption_anchor)
 
 scene.append_to_caption("\n")
 
@@ -412,38 +496,35 @@ def loopfunc(evt):
     loop_radius_slider_text.text = f"Radius: {evt.value:.0f}"
     loopradius.radius= evt.value
     loopradius.pos= vec(31,evt.value-1,-1)
-loopslider = slider(bind=loopfunc, min=6, max=20, value=10, step=1, length=slider_length, pos=scene.caption_anchor)
-loop_radius_slider_text = wtext(text=f"Radius: {loopslider.value:.0f}", pos=scene.caption_anchor)
+loopslider = slider(bind=loopfunc, min=6, max=20, step=1, length=slider_length, pos=scene.caption_anchor)
+loop_radius_slider_text = wtext(text="", pos=scene.caption_anchor)
 
-wall = box(pos=vec(0,12.5/2,0), height=15, width=5,length=0.1)
-block = box(pos=vec(4, 0, 0), length=1, height=2*SPRING_RADIUS, width=1, mass=20, vel=-1, max_initial_vel=-1)
+wall = box(pos=vec(0,12.5/2,0), height=15, width=5, length=0.1)
+block = box(length=1, height=2*SPRING_RADIUS, width=1)
+
+HEIGHT_ABOVE_BLOCK = 1
+equilibrium_point = sphere(radius=0.5, color=color.green)
+
 dt = 0.01
 t = 0
 
-equilibrium_point_height_above_block = 1
-equilibrium_point = sphere(pos=block.pos + vec(0, equilibrium_point_height_above_block, 0), radius=0.5, color=color.green)
-
 # graphs setup
-time_interval = 1/2 # <- set this value 
-max_t_points = int(time_interval / dt)
+TIME_INTERVAL = 1/2
+MAX_T_POINTS = int(TIME_INTERVAL / dt)
 
-energy_graph = graph(width=300, height=350, title="Energy vs Time", xtitle="Time", ytitle="Energy", align="right")
-K_curve = gcurve(graph=energy_graph, label="Kinetic Energy", color=color.green)
+energy_graph = graph()
+K_curve = gcurve()
 K_data = []
-U_curve = gcurve(graph=energy_graph, label="Potential Energy", color=color.red)
+U_curve = gcurve()
 U_data = []
 
-pos_graph = graph(width=300, height=350, title="Position vs Time", xtitle="Time", ytitle="Position", align="right")
-pos_curve = gcurve(graph=pos_graph, label="Position", color=color.blue)
+pos_graph = graph()
+pos_curve = gcurve()
 pos_data = []
 
-# UI elements setup
-spring_slider_function(spring_slider)
-initial_velocity_slider_function(initial_velocity_slider)
-spring_slider.visible = False
-preset_select(preset_menu)
+# initializes everything to have its intended intial value and/or state
+reset_button_function(reset_button)
 
-# assumed that: no sliders can be moved after the program has started
 # initial while loop for spring-oscillatory motion    
 while (True):
     rate(1/dt)
@@ -457,19 +538,19 @@ while (True):
 
     # update graphs
     # kinetic energy 
-    if not (len(K_data) < max_t_points):
+    if not (len(K_data) < MAX_T_POINTS):
         K_data.pop(0)
     K_data.append( (t, 1/2 * mass_slider.value * (block.vel**2)) )
     K_curve.data = K_data
     
     # potential energy
-    if not (len(U_data) < max_t_points):
+    if not (len(U_data) < MAX_T_POINTS):
         U_data.pop(0)
     U_data.append( (t, 1/2 * k * delta_x**2) )
     U_curve.data = U_data
     
     # position
-    if not (len(pos_data) < max_t_points):
+    if not (len(pos_data) < MAX_T_POINTS):
         pos_data.pop(0)
     pos_data.append( (t, delta_x))
     pos_curve.data = pos_data
