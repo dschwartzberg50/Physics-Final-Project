@@ -13,7 +13,7 @@ def hex_to_color(color_string):
 scene = canvas(width=600, height=700, align="left")
 scene.camera.pos = vec(10, 0, 20)
 
-left_margin = 3 * " "
+left_margin = "   "
 slider_length = 200
 
 # start button
