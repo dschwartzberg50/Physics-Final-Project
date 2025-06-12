@@ -13,7 +13,7 @@ def hex_to_color(color_string):
 scene = canvas(width=600, height=700, align="left")
 scene.camera.pos = vec(10, 0, 20)
 
-left_margin = "   "
+left_margin = "  "
 slider_length = 200
 
 # start button
@@ -85,7 +85,7 @@ scene.append_to_caption("\n")
 
 # spring slider (# of springs)
 def spring_slider_function(evt):
-    spring_slider_text.text = f"Number of Springs: {evt.value}"
+    spring_slider_text.text = f"Number of Springs: {evt.value:.0f}"
     
     # choose the corresponding list of springs/curves
     springs_list = series_springs_list if spring_mode_button.is_series_mode else parallel_springs_list
@@ -139,19 +139,18 @@ def spring_slider_function(evt):
     
     # calculate and set the maximum intiial velocity of the block so it doesn't go past x=0
     k = calculate_equivalent_k()
-    block.max_initial_vel = sqrt(k/block.mass * (block.pos.x**2))
+    block.max_initial_vel = sqrt(k/mass_slider.value * (block.pos.x**2))
     initial_velocity_slider_function(initial_velocity_slider)
     
     # set the first n spring constant sliders to be on
     for i in range(len(spring_constants_sliders)):
         spring_constants_sliders[i].disabled = (not (i < evt.value))
-scene.append_to_caption(left_margin)
 spring_slider = slider(bind=spring_slider_function, min=1, max=5, step=1, value=1, length=slider_length, pos=scene.caption_anchor)
-spring_slider_text = wtext(text=f"Number of Springs: {spring_slider.value}", pos=scene.caption_anchor)
+spring_slider_text = wtext(text=f"Number of Springs: {spring_slider.value:.0f}", pos=scene.caption_anchor)
 
 # sliders for spring constants (k values)
 def spring_constant_slider_function(evt):
-    spring_constants_texts[evt.id].text = f"Spring #{(evt.id)+1}: k={evt.value}"
+    spring_constants_texts[evt.id].text = f"Spring #{(evt.id)+1}: k={evt.value:.1f}"
     
     global series_springs_list, parallel_springs_list
     springs_list = series_springs_list if spring_mode_button.is_series_mode else parallel_springs_list
@@ -161,7 +160,7 @@ def spring_constant_slider_function(evt):
 spring_constants_sliders = []
 spring_constants_texts = []
 for i in range(spring_slider.max):
-    scene.append_to_caption("\n" + left_margin)
+    scene.append_to_caption("\n")
     
     spring_constants_sliders.append(
         slider(bind=spring_constant_slider_function, min=1, max=5, step=0.1, value=1, length=slider_length, pos=scene.caption_anchor)
@@ -170,7 +169,7 @@ for i in range(spring_slider.max):
     spring_constants_sliders[i].id = i
     
     spring_constants_texts.append(
-        wtext(text=f"Spring #{i+1}: k={spring_constants_sliders[i].value}", pos=scene.caption_anchor)
+        wtext(text=f"Spring #{i+1}: k={spring_constants_sliders[i].value:.1f}", pos=scene.caption_anchor)
     )
     
 def calculate_equivalent_k():
@@ -180,6 +179,33 @@ def calculate_equivalent_k():
     else:
         return sum(spring_slider.value for spring_slider in spring_constants_sliders)
 
+scene.append_to_caption("\n")
+scene.append_to_caption("\n")
+
+# mass of block slider
+def mass_slider_function(evt):
+    mass_slider_text.text = f"Mass: {mass_slider.value:.0f}"
+mass_slider = slider(bind=mass_slider_function, min=10, max=50, step=1, value=20, length=slider_length, pos=scene.caption_anchor)
+mass_slider_text = wtext(text=f"Mass: {mass_slider.value}", pos=scene.caption_anchor)
+
+scene.append_to_caption("\n")
+
+# initial velocity slider
+def initial_velocity_slider_function(evt):
+    block.vel = block.max_initial_vel * initial_velocity_slider.value # slider ranges from 0-1, acting as a percentage
+    initial_velocity_slider_text.text = f"Initial Velocity: {block.vel:.2f}"    
+initial_velocity_slider = slider(bind=initial_velocity_slider_function, min=0, max=0.95, step=0.01, value=0.5, length=slider_length, pos=scene.caption_anchor)
+initial_velocity_slider_text = wtext(text=f"Initial Velocity: {-4000}", pos=scene.caption_anchor)
+
+scene.append_to_caption("\n")
+
+# coefficient of friction slider
+def friction_slider_function(evt):
+    friction_slider_text.text = f"Coefficient of Friction: {evt.value:.2f}"
+friction_slider = slider(bind=friction_slider_function, min=0, max=1, step=0.01, value=0, length=slider_length, pos=scene.caption_anchor)
+friction_slider_text = wtext(text=f"Coefficient of Friction: {friction_slider.value}", pos=scene.caption_anchor)
+
+scene.append_to_caption("\n")
 scene.append_to_caption("\n")
 
 # creation of both spring lists
@@ -318,96 +344,77 @@ def modify_springs():
             spring.pos = vec(horizontal_spacing, i * (2*SPRING_RADIUS + VERTICAL_SPACING), 0)
             
     horizontal_spacing = d
-    
-#presets dropdown
-scene.append_to_caption("     ")
-def presetselect(evt):
-        if evt.index < 1:
-                pass
-        elif evt.index == 1:
-            cliffheight.visible = True
-            endofcliff.visible = True
-            slopeangle.visible = False
-            loopradius.visible = False
-            loop2.visible = False
-            cliffheightslider.disabled = False
-            loopslider.disabled = True
-            slopeslider.disabled = True
-        elif evt.index == 2:
-            cliffheight.visible = False
-            endofcliff.visible = False
-            slopeangle.visible = True
-            loopradius.visible = False
-            loop2.visible = False
-            cliffheightslider.disabled = True
-            loopslider.disabled = True
-            slopeslider.disabled = False
-        elif evt.index == 3:
-            cliffheightslider.disabled = True
-            loopslider.disabled = False
-            slopeslider.disabled = True
-            cliffheight.visible = False
-            endofcliff.visible = False
-            slopeangle.visible = False
-            loopradius.visible = True
-            loop2.visible = True
-            
-                    
-presetlist = ['Pick a preset :)','Cliff', 'Slope', 'Loop', 'Coaster']
-preset_menu = menu(bind=presetselect, choices=presetlist)
 
-#set up shapes
-start = box(pos=vec(15, -1, 0), length=30, height=.1, width=1, color=color.white)
+# # menu for scenarios
+preset_list = ["Cliff", "Slope", "Loop", "Coaster"]
+def preset_select(evt):
+    # make everything invisible / disabled
+    cliffheight.visible = False
+    endofcliff.visible = False
+    slopeangle.visible = False
+    loopradius.visible = False
+    loop2.visible = False
+    cliffheightslider.disabled = True
+    loopslider.disabled = True
+    slopeslider.disabled = True
+    if evt.index == 0:
+        cliffheight.visible = True
+        endofcliff.visible = True
+        cliffheightslider.disabled = False
+    elif evt.index == 1:
+        slopeangle.visible = True
+        slopeslider.disabled = False
+    elif evt.index == 2:
+        loopslider.disabled = False
+        loopradius.visible = True
+        loop2.visible = True
+scene.append_to_caption(left_margin)
+preset_menu = menu(bind=preset_select, choices=preset_list, index=0)
+
+scene.append_to_caption("\n")
+
+# initialize the objects for the scenarios
+ground = box(pos=vec(15, -1, 0), length=30, height=.1, width=1, color=color.white)
 cliffheight = box(pos=vec(30, -16, 0), length=.1, height=30, width=1, color=color.white)
 endofcliff = box(pos=vec(60, -31, 0), length=60, height=.1, width=1, color=color.white)
 slopeangle = box(pos=vec(46, 15, 0), length=45, height=.1, width=1,axis=vec(1,1,0), color=color.white)
 loopradius = helix(pos=vec(30, (4.5),-1), axis=vec(0,0,1), coils = 1, color=color.white, radius=6, thickness= 1)
-loopradius.rotate (axis = vec(0, 0, 1), angle = (pi/2), origin = vec(loopradius.pos+loopradius.axis/2))
+loopradius.rotate(axis=vec(0, 0, 1), angle=(pi/2), origin=vec(loopradius.pos+loopradius.axis/2))
 loop2 = box(pos=vec(45, -1, -1), length=30, height=.1, width=1, color=color.white)
-#cliff
+
+# cliff height slider
 def cliffheightfunc(evt):
+    cliff_height_slider_text.text = f"Height: {evt.value:.0f}"
+    
     cliffheight.height = evt.value
     cliffheight.pos.y = -evt.value/2-1
     endofcliff.pos.y = -evt.value-1
-#slope                    
-origin = vec(30, -1, 0)
+cliffheightslider = slider(bind=cliffheightfunc, min=5, max=50, value=30, step=1, length=slider_length, pos=scene.caption_anchor) 
+cliff_height_slider_text = wtext(text=f"Height: {cliffheightslider.value}", pos=scene.caption_anchor)
+
+scene.append_to_caption("\n")
+
+# slope angle slider
 def slopefunc(evt):
+    slope_angle_slider_text.text = f"Angle (degrees): {degrees(evt.value):.0f}"
     direction = vec(cos(evt.value), sin(evt.value), 0) 
-    slopeangle.axis = (direction * 45)                       
+    slopeangle.axis = (direction * 45)    
+
+    origin = vec(30, -1, 0)       
     slopeangle.pos = (origin + 0.5 * slopeangle.axis) 
-#loop
+slopeslider = slider(bind=slopefunc, min=(-pi/3), max=(pi/3), value=pi/4, length=slider_length, pos=scene.caption_anchor)
+slope_angle_slider_text = wtext(text=f"Angle (degrees): {degrees(slopeslider.value):.0f}")
+
+scene.append_to_caption("\n")
+
+# radius of loop slider
 def loopfunc(evt):
-                loopradius.radius= evt.value
-                loopradius.pos= vec(31,evt.value-1,-1)
-#sliders
-scene.append_to_caption('\n')
-cliffheightslider = slider( bind=cliffheightfunc, min=5, max=50, value = 30, length = 500, pos=scene.caption_anchor) 
-wtext(text='height')
-scene.append_to_caption('\n')
-slopeslider = slider(min=(-pi/3), max=(pi/3), value=pi/4, length=500, bind=slopefunc, pos=scene.caption_anchor)
-wtext(text='angle')
-scene.append_to_caption('\n')
-loopslider = slider(min=(6), max=(20), value=10, length=500, bind=loopfunc, pos=scene.caption_anchor)
-wtext(text='loop radius')
-cliffheight.visible = False
-endofcliff.visible = False
-slopeangle.visible = False
-loopradius.visible = False
-loop2.visible = False
-cliffheightslider.disabled = True
-loopslider.disabled = True
-slopeslider.disabled = True
+    loop_radius_slider_text.text = f"Radius: {evt.value:.0f}"
+    loopradius.radius= evt.value
+    loopradius.pos= vec(31,evt.value-1,-1)
+loopslider = slider(bind=loopfunc, min=6, max=20, value=10, step=1, length=slider_length, pos=scene.caption_anchor)
+loop_radius_slider_text = wtext(text=f"Radius: {loopslider.value:.0f}", pos=scene.caption_anchor)
 
-def initial_velocity_slider_function(evt):
-    global block
-    
-    block.vel = block.max_initial_vel * initial_velocity_slider.value # slider ranges from 0-1, acting as a percentage
-    initial_velocity_slider_text.text = f"Initial Velocity: {evt.value}"
-    
-initial_velocity_slider = slider(bind=initial_velocity_slider_function, min=0, max=0.95, step=0.01, value=0.5, length=slider_length, pos=scene.caption_anchor)
-initial_velocity_slider_text = wtext(text=f"Initial Velocity: {initial_velocity_slider.value}", pos=scene.caption_anchor)
-
-# need a mass slider
 wall = box(pos=vec(0,12.5/2,0), height=15, width=5,length=0.1)
 block = box(pos=vec(4, 0, 0), length=1, height=2*SPRING_RADIUS, width=1, mass=20, vel=-1, max_initial_vel=-1)
 dt = 0.01
@@ -434,6 +441,7 @@ pos_data = []
 spring_slider_function(spring_slider)
 initial_velocity_slider_function(initial_velocity_slider)
 spring_slider.visible = False
+preset_select(preset_menu)
 
 # assumed that: no sliders can be moved after the program has started
 # initial while loop for spring-oscillatory motion    
@@ -451,7 +459,7 @@ while (True):
     # kinetic energy 
     if not (len(K_data) < max_t_points):
         K_data.pop(0)
-    K_data.append( (t, 1/2 * block.mass * (block.vel**2)) )
+    K_data.append( (t, 1/2 * mass_slider.value * (block.vel**2)) )
     K_curve.data = K_data
     
     # potential energy
@@ -470,7 +478,7 @@ while (True):
     
     # euler's method
     force = -k * delta_x
-    acc = force / block.mass
+    acc = force / mass_slider.value
     block.vel += acc
     block.pos.x += block.vel
     
