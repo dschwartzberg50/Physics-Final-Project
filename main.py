@@ -430,7 +430,7 @@ def modify_springs():
     horizontal_spacing = d
 
 # # menu for scenarios
-preset_list = ["Cliff", "Slope", "Loop", "Coaster"]
+preset_list = ["Cliff", "Slope", "Loop"]
 def preset_select(evt):
     # make everything invisible / disabled
     cliffheight.visible = False
@@ -458,13 +458,13 @@ preset_menu = menu(bind=preset_select, choices=preset_list)
 scene.append_to_caption("\n")
 
 # initialize the objects for the scenarios
-ground = box(pos=vec(15, -1, 0), length=30, height=.1, width=1, color=color.white)
-cliffheight = box(pos=vec(30, -16, 0), length=.1, height=30, width=1, color=color.white)
-endofcliff = box(pos=vec(60, -31, 0), length=60, height=.1, width=1, color=color.white)
-slopeangle = box(pos=vec(46, 15, 0), length=45, height=.1, width=1,axis=vec(1,1,0), color=color.white)
-loopradius = helix(pos=vec(30, (4.5),-1), axis=vec(0,0,1), coils = 1, color=color.white, radius=6, thickness= 1)
+ground = box(pos=vec(30, -1, 0), length=60, height=.1, width=1, color=color.white)
+cliffheight = box(pos=vec(60, -31, 0), length=.1, height=60, width=1, color=color.white)
+endofcliff = box(pos=vec(120, -31, 0), length=120, height=.1, width=1, color=color.white)
+slopeangle = box(pos=vec(121, 30, 0), length=90, height=.1, width=1,axis=vec(1,1,0), color=color.white)
+loopradius = helix(pos=vec(60, (4.5),-1), axis=vec(0,0,1), coils = 1, color=color.white, radius=6, thickness= 1)
 loopradius.rotate(axis=vec(0, 0, 1), angle=(pi/2), origin=vec(loopradius.pos+loopradius.axis/2))
-loop2 = box(pos=vec(45, -1, -1), length=30, height=.1, width=1, color=color.white)
+loop2 = box(pos=vec(90, -1, -1), length=60, height=.1, width=1, color=color.white)
 
 # cliff height slider
 def cliffheightfunc(evt):
@@ -473,7 +473,7 @@ def cliffheightfunc(evt):
     cliffheight.height = evt.value
     cliffheight.pos.y = -evt.value/2-1
     endofcliff.pos.y = -evt.value-1
-cliffheightslider = slider(bind=cliffheightfunc, min=5, max=50,  step=1, length=slider_length, pos=scene.caption_anchor) 
+cliffheightslider = slider(bind=cliffheightfunc, min=15, max=150,  step=1, length=slider_length, pos=scene.caption_anchor) 
 cliff_height_slider_text = wtext(text=f"Height: {cliffheightslider.value}", pos=scene.caption_anchor)
 
 scene.append_to_caption("\n")
@@ -482,9 +482,9 @@ scene.append_to_caption("\n")
 def slopefunc(evt):
     slope_angle_slider_text.text = f"Angle (degrees): {degrees(evt.value):.0f}"
     direction = vec(cos(evt.value), sin(evt.value), 0) 
-    slopeangle.axis = (direction * 45)    
+    slopeangle.axis = (direction * 90)    
 
-    origin = vec(30, -1, 0)       
+    origin = vec(60, -1, 0)       
     slopeangle.pos = (origin + 0.5 * slopeangle.axis) 
 slopeslider = slider(bind=slopefunc, min=(-pi/3), max=(pi/3), length=slider_length, pos=scene.caption_anchor)
 slope_angle_slider_text = wtext(text="", pos=scene.caption_anchor)
@@ -495,7 +495,7 @@ scene.append_to_caption("\n")
 def loopfunc(evt):
     loop_radius_slider_text.text = f"Radius: {evt.value:.0f}"
     loopradius.radius= evt.value
-    loopradius.pos= vec(31,evt.value-1,-1)
+    loopradius.pos= vec(61,evt.value-1,-1)
 loopslider = slider(bind=loopfunc, min=6, max=20, step=1, length=slider_length, pos=scene.caption_anchor)
 loop_radius_slider_text = wtext(text="", pos=scene.caption_anchor)
 
@@ -574,3 +574,6 @@ while (True):
     
     block.pos.x += block.vel
     pass
+
+gravity = 9.81
+#motion of the block for graph
