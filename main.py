@@ -37,6 +37,7 @@ def launch_button_function(evt):
 scene.append_to_caption(" ")
 launch_button = button(bind=launch_button_function, text="Launch", background=color.blue, pos=scene.caption_anchor)
 
+# TODO: reset button doesn't work if you press start and then launch
 # reset button; also used to initialize all sliders, buttons, and objects
 def reset_button_function(evt):
     start_button.disabled = False
@@ -55,7 +56,7 @@ def reset_button_function(evt):
     spring_slider_function(spring_slider)
     
     for spring_constants_slider in spring_constants_sliders:
-        spring_constants_slider.disabled = False
+        spring_constants_slider.disabled = True
         spring_constants_slider.value = 1
         spring_constant_slider_function(spring_constants_slider)
     
@@ -103,6 +104,9 @@ def reset_button_function(evt):
     block.pos = vec(4, (block.height - 2*SPRING_RADIUS) / 2, 0)
     
     equilibrium_point.pos = block.pos + vec(0, block.height/2 + HEIGHT_ABOVE_BLOCK, 0)
+    
+    A = calculate_maximum_displacement()
+    block2.pos = block.pos + vec(A + RIGHT_DISTANCE, 0, 0)
     
     global energy_graph
     energy_graph.delete()
@@ -213,6 +217,9 @@ def spring_slider_function(evt):
     total_length = horizontal_spacing + v1*(horizontal_spacing + spring_length)
     block.pos.x = total_length + block.length/2
     
+    A = calculate_maximum_displacement()
+    block2.pos = block.pos + vec(A + RIGHT_DISTANCE, 0, 0)
+    
     v2 = evt.value if (not spring_mode_button.is_series_mode) else 1
     block.height = v2*(VERTICAL_SPACING + 2*SPRING_RADIUS)
     block.pos.y = (block.height - 2*SPRING_RADIUS) / 2
@@ -222,7 +229,8 @@ def spring_slider_function(evt):
     
     # calculate and set the maximum intiial velocity of the block so it doesn't go past x=0
     k = calculate_equivalent_k()
-    block.max_initial_vel = sqrt(k/mass_slider.value * (block.pos.x**2))
+    max_displacement = equilibrium_point.pos.x
+    block.max_initial_vel = sqrt(k/mass_slider.value * max_displacement**2)
     initial_velocity_slider_function(initial_velocity_slider)
     
     # set the first n spring constant sliders to be on
@@ -235,9 +243,11 @@ spring_slider_text = wtext(text="", pos=scene.caption_anchor)
 def spring_constant_slider_function(evt):
     spring_constants_texts[evt.id].text = f"Spring #{(evt.id)+1}: k={evt.value:.1f}"
     
-    global series_springs_list, parallel_springs_list
-    springs_list = series_springs_list if spring_mode_button.is_series_mode else parallel_springs_list
-    
+    for spring_constants_slider in spring_constants_sliders:
+        spring_constants_slider.disabled = True
+    for i, spring_constants_slider in zip(range(spring_slider.value), spring_constants_sliders):
+        spring_constants_slider.disabled = False
+        
     # adjust the color maybe ?!?! TODO
     pass
 spring_constants_sliders = []
@@ -261,6 +271,10 @@ def calculate_equivalent_k():
         return 1 / sum(1/spring_slider.value for spring_slider in spring_constants_sliders)
     else:
         return sum(spring_slider.value for spring_slider in spring_constants_sliders)
+
+def calculate_maximum_displacement():
+    k = calculate_equivalent_k()
+    return sqrt(mass_slider.value / k * (block.vel**2))
 
 scene.append_to_caption("\n")
 scene.append_to_caption("\n")
@@ -473,7 +487,7 @@ def cliffheightfunc(evt):
     cliffheight.height = evt.value
     cliffheight.pos.y = -evt.value/2-1
     endofcliff.pos.y = -evt.value-1
-cliffheightslider = slider(bind=cliffheightfunc, min=5, max=50,  step=1, length=slider_length, pos=scene.caption_anchor) 
+cliffheightslider = slider(bind=cliffheightfunc, min=5, max=50, step=1, length=slider_length, pos=scene.caption_anchor) 
 cliff_height_slider_text = wtext(text=f"Height: {cliffheightslider.value}", pos=scene.caption_anchor)
 
 scene.append_to_caption("\n")
@@ -482,7 +496,7 @@ scene.append_to_caption("\n")
 def slopefunc(evt):
     slope_angle_slider_text.text = f"Angle (degrees): {degrees(evt.value):.0f}"
     direction = vec(cos(evt.value), sin(evt.value), 0) 
-    slopeangle.axis = (direction * 45)    
+    slopeangle.axis = (direction * 90)    
 
     origin = vec(30, -1, 0)       
     slopeangle.pos = (origin + 0.5 * slopeangle.axis) 
@@ -504,6 +518,11 @@ block = box(length=1, height=2*SPRING_RADIUS, width=1)
 
 HEIGHT_ABOVE_BLOCK = 1
 equilibrium_point = sphere(radius=0.5, color=color.green)
+
+RIGHT_DISTANCE = 2
+block2 = box(length=1, height=1, width=1)
+block2.pos.y = block2.height/2 # TODO make this work
+block2.vel = 0
 
 dt = 0.01
 t = 0
@@ -568,9 +587,16 @@ while (True):
     
 launch_button.disabled = True
     
+# TODO: integrate these into one while loop
 # second while loop for projectile motion after block has been launched
 while (True):
     rate(1/dt)
     
+    # when the right side of block collides with the left side of block2
+    if block.pos.x + block.length/2 >= block2.pos.x - block2.length/2:
+        block2.vel = block.vel
+        block.vel = 0
+    
     block.pos.x += block.vel
+    block2.pos.x += block2.vel
     pass
