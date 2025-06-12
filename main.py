@@ -10,7 +10,6 @@ def start_button_function(evt):
     initial_velocity_slider.disabled = True
     spring_mode_button.disabled = True
     preset_menu.disabled = True
-    launch_button.disabled = True
     # put other UI elements here later to be disabled
     
 start_button = button(bind=start_button_function, text='Start', background=color.green, pos=scene.title_anchor, disabled=False, started=False)
@@ -69,11 +68,10 @@ def spring_slider_function(evt):
             c2.visible = True
     
     # set the new attributes of the block
-    global block, horizontal_spacing, vertical_spacing, spring_radius
-    spring_length = springs_list[0].length
+    global block, spring_length, horizontal_spacing, vertical_spacing, spring_radius
     v1 = evt.value if (spring_mode_button.is_series_mode) else 1
     total_length = horizontal_spacing + v1*(horizontal_spacing + spring_length)
-#    block.pos.x = total_length + block.length/2
+    block.pos.x = total_length + block.length/2
     
     v2 = evt.value if (not spring_mode_button.is_series_mode) else 1
     block.height = v2*(vertical_spacing + 2*spring_radius)
@@ -85,10 +83,8 @@ def spring_slider_function(evt):
     
     # calculate and set the maximum intiial velocity of the block so it doesn't go past x=0
     k = calculate_equivalent_k()
-    delta_x = block.pos.x - equilibrium_point.pos.x
-    block.max_initial_vel = sqrt(k/block.mass * (delta_x**2))
-    initial_displacement_and_velocity_slider_function(initial_velocity_slider)
-    initial_displacement_and_velocity_slider_function(initial_displacement_slider)
+    block.max_initial_vel = sqrt(k/block.mass * (block.pos.x**2))
+    initial_velocity_slider_function(initial_velocity_slider)
     
     global spring_constants_sliders
     # set the first n spring constant sliders to be on
@@ -124,7 +120,7 @@ spring_mode_button.is_series_mode = True
 # make the spring visuals 
 
 max_springs = 5
-init_spring_length = 2.5
+spring_length = 2.5
 spring_radius = 1
 curve_thickness = 0.05
 num_coils = 3.5 # must be 0.5 + n because half a coil looks good ! 
@@ -147,8 +143,8 @@ def create_series_curve_points(i, d, l):
 series_springs_list = []
 for i in range(max_springs):
     series_springs_list.append(
-        helix(pos=vec(horizontal_spacing + i * (init_spring_length + horizontal_spacing), 0, 0), 
-              axis=vec(init_spring_length, 0, 0), 
+        helix(pos=vec(horizontal_spacing + i * (spring_length + horizontal_spacing), 0, 0), 
+              axis=vec(spring_length, 0, 0), 
               coils=num_coils,
               radius=spring_radius, 
               k=1,
@@ -158,7 +154,7 @@ for i in range(max_springs):
     )    
 series_lines_list = []
 for i in range(max_springs+1):
-    curve_points = create_series_curve_points(i, horizontal_spacing, init_spring_length)
+    curve_points = create_series_curve_points(i, horizontal_spacing, spring_length)
     series_lines_list.append(
         curve(pos=curve_points,
               radius=curve_thickness,
@@ -168,7 +164,7 @@ for i in range(max_springs+1):
     )
     
 def create_parallel_curve_points(i, h, d, l, right):
-    curve_points = create_series_curve_points(1 if right else 0, horizontal_spacing, init_spring_length)
+    curve_points = create_series_curve_points(1 if right else 0, horizontal_spacing, spring_length)
     if right:
         curve_points.pop()
     
@@ -182,7 +178,7 @@ parallel_springs_list = []
 for i in range(max_springs):
     parallel_springs_list.append(
         helix(pos=vec(horizontal_spacing, i * (2*spring_radius + vertical_spacing), 0), 
-              axis=vec(init_spring_length, 0, 0), 
+              axis=vec(spring_length, 0, 0), 
               coils=num_coils,
               radius=spring_radius, 
               k=1,
@@ -192,14 +188,14 @@ for i in range(max_springs):
     )  
 parallel_lines_list = []
 for i in range(max_springs):
-    points1 = create_parallel_curve_points(i, vertical_spacing, horizontal_spacing, init_spring_length, False)
+    points1 = create_parallel_curve_points(i, vertical_spacing, horizontal_spacing, spring_length, False)
     c1 = curve(
         pos=points1,
         radius=curve_thickness,
         color=color.red,
         visible=False
     )
-    points2 = create_parallel_curve_points(i, vertical_spacing, horizontal_spacing, init_spring_length, True)
+    points2 = create_parallel_curve_points(i, vertical_spacing, horizontal_spacing, spring_length, True)
     c2 = curve(
         pos=points2,
         radius=curve_thickness,
@@ -212,10 +208,9 @@ for i in range(max_springs):
 
 # modify the springs based on the block's position
 def modify_springs():
-    global spring_mode_button, series_springs_list, parallel_springs_list, spring_slider, horizontal_spacing
+    global spring_mode_button, series_springs_list, parallel_springs_list, spring_slider, horizontal_spacing, spring_length
     is_series_mode = spring_mode_button.is_series_mode
     springs_list = series_springs_list if is_series_mode else parallel_springs_list
-    spring_length = springs_list[0].length
     n = spring_slider.value
     
     d0 = horizontal_spacing
@@ -258,6 +253,7 @@ def modify_springs():
             spring.length = l
             spring.pos = vec(horizontal_spacing, i * (2*spring_radius + vertical_spacing), 0)
     
+    spring_length = l
     horizontal_spacing = d
 
 def calculate_equivalent_k():
@@ -378,49 +374,33 @@ cliffheightslider.disabled = True
 loopslider.disabled = True
 slopeslider.disabled = True
 
+#def initial_position_slider_function(evt):
+#    global block
+#    
+#    block.pos.x = evt.value * block.max_initial_position
+#    initial_velocity_slider_text.text = f"Initial Velocity: {evt.value}"
+#    
+#initial_position_slider = slider(bind=initial_position_slider_function, min=0.05, max=1, step=0.01, value=0.5, length=200, pos=scene.caption_anchor)
+#initial_position_slider_text = wtext(text=f"Initial Position", pos=scene.caption_anchor)
+#
+
+def initial_velocity_slider_function(evt):
+    global block
+    
+    block.vel = block.max_initial_vel * initial_velocity_slider.value # slider ranges from 0-1, acting as a percentage
+    initial_velocity_slider_text.text = f"Initial Velocity: {evt.value}"
+    
+initial_velocity_slider = slider(bind=initial_velocity_slider_function, min=0, max=0.95, step=0.01, value=0.5, length=200, pos=scene.caption_anchor)
+initial_velocity_slider_text = wtext(text=f"Initial Velocity: {initial_velocity_slider.value}", pos=scene.caption_anchor)
+
 # need a mass slider
 wall = box(pos=vec(0,12.5/2,0), height=15, width=5,length=0.1)
-block = box(pos=vec(4, 0, 0), length=1, height=2*spring_radius, width=1, mass=20, vel=-1, max_initial_displacement=-1, max_initial_vel=-1)
+block = box(pos=vec(4, 0, 0), length=1, height=2*spring_radius, width=1, mass=20, vel=-1, max_initial_vel=-1)
 dt = 0.01
 t = 0
 
 equilibrium_point_height_above_block = 1
 equilibrium_point = sphere(pos=block.pos + vec(0, equilibrium_point_height_above_block, 0), radius=0.5, color=color.green)
-
-
-def initial_displacement_and_velocity_slider_function(evt):
-    global block
-    
-    k = calculate_equivalent_k()
-    if evt.id == "x": # slider is displacement -> change max velocity
-        block.pos.x = equilibrium_point.pos.x + initial_displacement_slider.value * A
-        
-        delta_x = block.pos.x - equilibrium_point.pos.x
-        block.max_initial_vel = sqrt(k*(A**2 - delta_x**2) / block.mass)
-        
-        block.vel = initial_velocity_slider.value * block.max_initial_vel
-    elif evt.id == "v": # slider is velocity -> change max displacment
-        block.vel = initial_velocity_slider.value * block.max_initial_vel
-        
-        delta_x = block.pos.x - equilibrium_point.pos.x
-        block.max_initial_displacement = sqrt((k*(A**2) - block.mass*(delta_x**2)) / k)
-        
-        block.pos.x = equilibrium_point.pos.x + initial_displacement_slider.value * A
-    else:
-        pass
-    
-    initial_displacement_slider_text.text = f"Initial Displacement: {block.pos.x - equilibrium_point.pos.x}"
-    initial_velocity_slider_text.text = f"Initial Velocity: {block.vel}"
-    
-    modify_springs()
-
-ratio = 0.95 # ratio of the equilibrium position's x that can be extended 
-A = ratio * equilibrium_point.pos.x
-initial_displacement_slider = slider(bind=initial_displacement_and_velocity_slider_function, min=-1, max=1, step=0.01, value=0, length=200, pos=scene.caption_anchor, id="x")
-initial_displacement_slider_text = wtext(text=f"Initial Displacement: {0}", pos=scene.caption_anchor)
-
-initial_velocity_slider = slider(bind=initial_displacement_and_velocity_slider_function, min=-1, max=1, step=0.01, value=1, length=200, pos=scene.caption_anchor, id="v")
-initial_velocity_slider_text = wtext(text=f"Initial Velocity: {initial_velocity_slider.value}", pos=scene.caption_anchor)
 
 # graphs setup
 time_interval = 1/2 # <- set this value 
@@ -438,8 +418,7 @@ pos_data = []
 
 # UI elements setup
 spring_slider_function(spring_slider)
-initial_displacement_and_velocity_slider_function(initial_displacement_slider)
-initial_displacement_and_velocity_slider_function(initial_velocity_slider)
+initial_velocity_slider_function(initial_velocity_slider)
 spring_slider.visible = False
 
 # assumed that: no sliders can be moved after the program has started
