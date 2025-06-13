@@ -11,7 +11,7 @@ def hex_to_color(color_string):
     return vec(*rgb_list)
     
 scene = canvas(width=600, height=660, align="left")
-scene.camera.pos = vec(24.0448, 0.133734, 49.8782)
+scene.camera.pos = vec(31.3822, -0.790668, 62.5785)
 
 left_margin = "  "
 slider_length = 200
@@ -49,10 +49,6 @@ launch_button.launched = False
 # TODO: reset button doesn't work after launching and then reset
 
 # reset button; also used to initialize all sliders, buttons, and objects
-
-#blocking walls set up
-wall2 = box(pos=vec(30, 14, 0), length=.1, height=30, width=1, color=color.white)
-wall2.visible = False
 def reset_button_function(evt):
     start_button.disabled = False
     
@@ -84,6 +80,7 @@ def reset_button_function(evt):
     friction_slider.value = 0
     friction_slider_function(friction_slider)
     
+    global horizontal_spacing
     horizontal_spacing = INIT_HORIZONTAL_SPACING
     
     # TODO: this breaks on reset for some reason
@@ -157,8 +154,8 @@ def reset_button_function(evt):
     global t
     t = 0
     
-    wall2.visible= False
-    
+    wall2.visible = False
+
 scene.append_to_caption(" ")
 reset_button = button(bind=reset_button_function, text="Reset", background=color.yellow, pos=scene.caption_anchor)
 
@@ -239,7 +236,7 @@ def calculate_maximum_displacement():
     
 def calculate_maximum_initial_velocity():
     k = calculate_equivalent_k()
-    max_displacement = equilibrium_point.pos.x - 1 # arbitrary max displacement
+    max_displacement = equilibrium_point.pos.x * 0.75 # arbitrary max displacement based on the initial stretched length of the springs
     return sqrt(k/mass_slider.value * max_displacement**2)
     
 def calculate_single_spring_length():
@@ -445,13 +442,13 @@ def set_max_displacement_arrow():
     max_displacement_arrow.axis = vec(calculate_maximum_displacement(), 0, 0)
 
 # modify the springs based on the block's position
-def modify_springs():
+def update_springs():
     global horizontal_spacing
     springs_list = get_springs_list()
     n = spring_slider.value
     
     d0 = horizontal_spacing
-    l0 = springs_list[0].length
+    l0 = calculate_single_spring_length()
     
     if spring_mode_button.is_series_mode:
         global series_lines_list
@@ -488,7 +485,7 @@ def modify_springs():
         for i, spring in enumerate(springs_list):
             spring.length = l
             spring.pos = vec(horizontal_spacing, i * (2*SPRING_RADIUS + VERTICAL_SPACING), 0)
-            
+    
     horizontal_spacing = d
 
 # menu for scenarios
@@ -523,8 +520,10 @@ preset_menu = menu(bind=preset_select, choices=preset_list)
 
 scene.append_to_caption("\n")
 
-# initialize the objects for the scenarios
+# initialize all objects
 ground = box(pos=vec(15, -1, 0), length=30, height=.1, width=1, color=color.white)
+# ground2 = 
+
 cliffheight = box(pos=vec(30, -16, 0), length=.1, height=30, width=1, color=color.white)
 cliffstopper = box(pos=vec(90,-29,0), length=.1, height = 5, width=1, color=color.white)
 endofcliff = box(pos=vec(60, -31, 0), length=60, height=.1, width=1, color=color.white)
@@ -533,6 +532,9 @@ loopradius = helix(pos=vec(30, (4.5),-1), axis=vec(0,0,1), coils = 1, color=colo
 loopradius.rotate(axis=vec(0, 0, 1), angle=(pi/2), origin=vec(loopradius.pos+loopradius.axis/2))
 loop2 = box(pos=vec(45, -1, -1), length=30, height=.1, width=1, color=color.white)
 loopstopper = box(pos=vec(60, 2, -1), length=.1, height=6, width=1, color=color.white)
+wall = box(pos=vec(0,12.5/2,0), height=15, width=5, length=0.1, color=color.white)
+wall2 = box(pos=vec(30, 14, 0), length=.1, height=30, width=1, color=color.white)
+wall2.visible = False
 
 # cliff height slider
 def cliffheightfunc(evt):
@@ -568,7 +570,6 @@ def loopfunc(evt):
 loopslider = slider(bind=loopfunc, min=6, max=20, step=1, length=slider_length, pos=scene.caption_anchor)
 loop_radius_slider_text = wtext(text="", pos=scene.caption_anchor)
 
-wall = box(pos=vec(0,12.5/2,0), height=15, width=5, length=0.1)
 block = box(length=1, height=2*SPRING_RADIUS, width=1)
 block.vel = 0
 
@@ -644,14 +645,14 @@ def run1(state):
     block.pos.x += block.vel * dt
     
     # update the entire spring setup
-    modify_springs()
+    update_springs()
     
     if state == 2:
         launch_button.disabled = True
         if launch_button.about_to_launch and block.vel > 0 and block.pos.x >= equilibrium_point.pos.x:
             launch_button.about_to_launch = False
             launch_button.launched = True
-            
+      
 def run2():
     # simulate collision
     if block.pos.x + block.length/2 >= block2.pos.x - block2.length/2:
@@ -679,8 +680,6 @@ def run3():
     elif preset_menu.index == 1: # slope
         block.pos.x += block.vel  # pre-slope horizontal motion
         
-#        print(block2.past)
-        
         if not block2.past:
             if block2.pos.x - block2.length/2 > ground.length:
                 block2.vel = rotate(block2.vel, angle=slopeslider.value, axis=vec(0, 0, 1))
@@ -704,7 +703,6 @@ while (True):
     rate(100)
     
     state = get_state()
-    print(scene.camera.pos)
     
     # before pressing start
     if state == 0:
