@@ -53,7 +53,7 @@ launch_button.launched = False
 # reset button; also used to initialize all sliders, buttons, and objects
 
 #blocking walls set up
-wall2 = box(pos=vec(30, 2, 0), length=.1, height=6, width=1, color=color.white)
+wall2 = box(pos=vec(30, 14, 0), length=.1, height=30, width=1, color=color.white)
 wall2.visible = False
 def reset_button_function(evt):
     start_button.disabled = False
@@ -131,7 +131,7 @@ def reset_button_function(evt):
     block2.up = vec(0, 1, 0)
     block2.pos.y = -(VERTICAL_SPACING + 2*SPRING_RADIUS)/2 + block2.height
     block2.vel = vec(0, 0, 0)
-    block2.fell = False
+    block2.past = False
     
     global energy_graph
     energy_graph.delete()
@@ -533,6 +533,7 @@ loopradius = helix(pos=vec(30, (4.5),-1), axis=vec(0,0,1), coils = 1, color=colo
 loopradius.rotate(axis=vec(0, 0, 1), angle=(pi/2), origin=vec(loopradius.pos+loopradius.axis/2))
 loop2 = box(pos=vec(45, -1, -1), length=30, height=.1, width=1, color=color.white)
 loopstopper = box(pos=vec(60, 2, -1), length=.1, height=6, width=1, color=color.white)
+
 # cliff height slider
 def cliffheightfunc(evt):
     cliff_height_slider_text.text = f"Height: {evt.value:.0f}"
@@ -579,14 +580,14 @@ max_displacement_arrow = arrow(round=True, shaftwidth=0.3, color=hex_to_color("#
 RIGHT_DISTANCE = 2
 block2 = box(size=(SPRING_RADIUS)*vec(1, 1, 1))
 block2.vel = vec(0, 0, 0)
-block2.fell = False
+block2.past = False
 
 scene.camera.follow(block2)
 
 dt = 1
 t = 0
 
-GRAVITY = 0.1
+GRAVITY = 0.01
 
 # graphs setup
 MAX_T_POINTS = 100
@@ -667,45 +668,39 @@ def run3():
         wall2.visible = True
     if preset_menu.index == 0: # cliff
         # past the cliff's ledge
-        if not block2.fell and block2.pos.x - block2.length/2 > ground.length:
+        if not block2.past and block2.pos.x - block2.length/2 > ground.length:
             acc = -GRAVITY
             block2.vel.y += acc * dt
         
-        print(block2.fell)
-        if not block2.fell and block2.pos.y <= endofcliff.pos.y:
+        if not block2.past and block2.pos.y <= endofcliff.pos.y:
             block2.pos.y = endofcliff.pos.y + block2.height/2
             block2.vel.y = 0
-            block2.fell = True
+            block2.past = True
         
-        block2.pos += block2.vel * dt
+    # TODO: fix this
     elif preset_menu.index == 1: # slope
-        # # past the horizontal runway
-        # vel = block2.vel
-        # if block2.pos.x - block2.length/2 > ground.length:
-        #     block2.up = slopeangle.up
-        # 
-        #     vel = rotate(vel, angle=slopeslider.value, axis=vec(0, 0, 1))
-        # block2.pos += vel * dt
         block.pos.x += block.vel  # pre-slope horizontal motion
-    
-        if block2.pos.x > 60:
-            theta = slopeslider.value
-            a = -gravity * sin(theta)*.01  # acceleration along the slope
-            block2.vel += a * dt        # update velocity along slope
-    
-            dx = block2.vel * dt * cos(theta)  # x component
-            dy = block2.vel * dt * sin(theta)  # y component
-    
-            block2.pos.x += dx
-            block2.pos.y += dy*144
-            
-        # TODO fix the values here
         
+#        print(block2.past)
+        
+        if not block2.past:
+            if block2.pos.x - block2.length/2 > ground.length:
+                block2.vel = rotate(block2.vel, angle=slopeslider.value, axis=vec(0, 0, 1))
+                block2.past = True
+        
+        if block2.past:
+            theta = slopeslider.value
+            acc = (-GRAVITY*sin(theta)) * vec(cos(theta), sin(theta), 0) 
+            block2.vel += acc
+
     elif preset_menu.index == 2: # loop
+        
         
         pass
     else:
         pass
+
+    block2.pos += block2.vel * dt
 
 while (True):
     rate(100)
@@ -729,3 +724,4 @@ while (True):
         
     t += dt
 
+# unreachable
