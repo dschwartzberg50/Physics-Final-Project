@@ -53,7 +53,7 @@ launch_button.launched = False
 # reset button; also used to initialize all sliders, buttons, and objects
 
 #blocking walls set up
-wall2 = box(pos=vec(30, 14, 0), length=.1, height=30, width=1, color=color.white)
+wall2 = box(pos=vec(30, 2, 0), length=.1, height=6, width=1, color=color.white)
 wall2.visible = False
 def reset_button_function(evt):
     start_button.disabled = False
@@ -492,21 +492,23 @@ def modify_springs():
     horizontal_spacing = d
 
 # menu for scenarios
-preset_list = ["Cliff", "Slope", "Loop", "Coaster"]
+preset_list = ["Cliff", "Slope", "Loop"]
 def preset_select(evt):
     # make everything invisible / disabled
     cliffheight.visible = False
     endofcliff.visible = False
     slopeangle.visible = False
     loopradius.visible = False
+    cliffstopper.visible = False
+    loopstopper.visible = False
     loop2.visible = False
     cliffheightslider.disabled = True
     loopslider.disabled = True
     slopeslider.disabled = True
-    
     if evt.index == 0:
         cliffheight.visible = True
         endofcliff.visible = True
+        cliffstopper.visible = True
         cliffheightslider.disabled = False
     elif evt.index == 1:
         slopeangle.visible = True
@@ -515,6 +517,7 @@ def preset_select(evt):
         loopslider.disabled = False
         loopradius.visible = True
         loop2.visible = True
+        loopstopper.visible = True
 scene.append_to_caption(left_margin)
 preset_menu = menu(bind=preset_select, choices=preset_list)
 
@@ -523,12 +526,13 @@ scene.append_to_caption("\n")
 # initialize the objects for the scenarios
 ground = box(pos=vec(15, -1, 0), length=30, height=.1, width=1, color=color.white)
 cliffheight = box(pos=vec(30, -16, 0), length=.1, height=30, width=1, color=color.white)
+cliffstopper = box(pos=vec(90,-29,0), length=.1, height = 5, width=1, color=color.white)
 endofcliff = box(pos=vec(60, -31, 0), length=60, height=.1, width=1, color=color.white)
 slopeangle = box(pos=vec(46, 15, 0), length=45, height=.1, width=1,axis=vec(1,1,0), color=color.white)
 loopradius = helix(pos=vec(30, (4.5),-1), axis=vec(0,0,1), coils = 1, color=color.white, radius=6, thickness= 1)
 loopradius.rotate(axis=vec(0, 0, 1), angle=(pi/2), origin=vec(loopradius.pos+loopradius.axis/2))
 loop2 = box(pos=vec(45, -1, -1), length=30, height=.1, width=1, color=color.white)
-
+loopstopper = box(pos=vec(60, 2, -1), length=.1, height=6, width=1, color=color.white)
 # cliff height slider
 def cliffheightfunc(evt):
     cliff_height_slider_text.text = f"Height: {evt.value:.0f}"
@@ -536,6 +540,7 @@ def cliffheightfunc(evt):
     cliffheight.height = evt.value
     cliffheight.pos.y = -evt.value/2-1
     endofcliff.pos.y = -evt.value-1
+    cliffstopper.pos.y = -evt.value+1.5
 cliffheightslider = slider(bind=cliffheightfunc, min=5, max=50, step=1, length=slider_length, pos=scene.caption_anchor) 
 cliff_height_slider_text = wtext(text=f"", pos=scene.caption_anchor)
 
@@ -724,4 +729,3 @@ while (True):
         
     t += dt
 
-# unreachable
