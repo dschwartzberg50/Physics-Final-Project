@@ -601,5 +601,5 @@ while (True):
             dy = block.vel * dt * sin(theta)  # y component
     
             block.pos.x += dx
-            block.pos.y += dy*150
+            block.pos.y += dy*144
     pass
