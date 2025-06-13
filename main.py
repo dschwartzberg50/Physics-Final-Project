@@ -259,6 +259,8 @@ scene.append_to_caption("\n")
 # mass of block slider
 def mass_slider_function(evt):
     mass_slider_text.text = f"Mass: {mass_slider.value:.0f}"
+
+    set_max_displacement_arrow()
 mass_slider = slider(bind=mass_slider_function, min=5, max=20, step=1, length=slider_length, pos=scene.caption_anchor)
 mass_slider_text = wtext(text="", pos=scene.caption_anchor)
 
