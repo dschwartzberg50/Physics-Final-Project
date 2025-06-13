@@ -11,9 +11,7 @@ def hex_to_color(color_string):
     return vec(*rgb_list)
     
 scene = canvas(width=600, height=660, align="left")
-scene.camera.pos = vec(20, -5, 45)
-# TODO: adjust initial camera angle a bit
-# maybe make the camera follow block2
+scene.camera.pos = vec(24.0448, 0.133734, 49.8782)
 
 left_margin = "  "
 slider_length = 200
@@ -584,8 +582,6 @@ block2 = box(size=(SPRING_RADIUS)*vec(1, 1, 1))
 block2.vel = vec(0, 0, 0)
 block2.past = False
 
-scene.camera.follow(block2)
-
 dt = 1
 t = 0
 
@@ -696,7 +692,7 @@ def run3():
             block2.vel += acc
 
     elif preset_menu.index == 2: # loop
-        
+        # TODO
         
         pass
     else:
@@ -708,6 +704,7 @@ while (True):
     rate(100)
     
     state = get_state()
+    print(scene.camera.pos)
     
     # before pressing start
     if state == 0:
