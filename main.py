@@ -575,5 +575,30 @@ while (True):
     block.pos.x += block.vel
     pass
 
-gravity = 9.81
 #motion of the block for graph
+time = 0
+gravity = 9.81
+while (True):
+    if (endofcliff.visible == True):
+        rate(1/dt)
+        time += dt
+        block.pos.x += block.vel
+        if block.pos.x > 60:
+            block.pos.y = (15-0.5*gravity*time**2)
+            print (endofcliff.pos.y)
+            if block.pos.y <= endofcliff.pos.y:
+                block.pos.y = endofcliff.pos.y+1.5
+    elif (slopeangle.visible == True):
+        rate(1/dt)
+        time += dt
+        block.pos.x += block.vel
+        if block.pos.x > 60:
+            a = gravity*sin(slopeslider.value)
+            if slopeslider.value > 0:
+                block.pos.y = 0.5*a*time**2*sin(slopeslider.value)
+                block.pos.x = 60+0.5*a*time**2*cos(slopeslider.value)
+            else:
+                block.pos.y = -0.5*a*time**2*sin(slopeslider.value)
+                block.pos.x = 60+0.5*a*time**2*-cos(slopeslider.value)
+
+    pass
