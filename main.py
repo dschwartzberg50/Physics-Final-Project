@@ -588,17 +588,18 @@ while (True):
             print (endofcliff.pos.y)
             if block.pos.y <= endofcliff.pos.y:
                 block.pos.y = endofcliff.pos.y+1.5
-    elif (slopeangle.visible == True):
+    elif slopeangle.visible == True:
         rate(1/dt)
-        time += dt
-        block.pos.x += block.vel
+        block.pos.x += block.vel  # pre-slope horizontal motion
+    
         if block.pos.x > 60:
-            a = gravity*sin(slopeslider.value)
-            if slopeslider.value > 0:
-                block.pos.y = 0.5*a*time**2*sin(slopeslider.value)
-                block.pos.x = 60+0.5*a*time**2*cos(slopeslider.value)
-            else:
-                block.pos.y = -0.5*a*time**2*sin(slopeslider.value)
-                block.pos.x = 60+0.5*a*time**2*-cos(slopeslider.value)
-
+            theta = slopeslider.value
+            a = -gravity * sin(theta)*.01  # acceleration along the slope
+            block.vel += a * dt        # update velocity along slope
+    
+            dx = block.vel * dt * cos(theta)  # x component
+            dy = block.vel * dt * sin(theta)  # y component
+    
+            block.pos.x += dx
+            block.pos.y += dy*150
     pass
