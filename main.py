@@ -10,23 +10,28 @@ def hex_to_color(color_string):
     
     return vec(*rgb_list)
     
-scene = canvas(width=600, height=700, align="left")
-scene.camera.pos = vec(10, 0, 20)
+scene = canvas(width=600, height=600, align="left")
+scene.camera.pos = vec(20, -5, 45)
 
 left_margin = "  "
 slider_length = 200
 
-# TODO: disable everything
 # start button
 def start_button_function(evt):
-    # disable all UI elements to control the intial conditions
     start_button.disabled = True
-    spring_slider.disabled = True
-    initial_velocity_slider.disabled = True
     spring_mode_button.disabled = True
+    spring_slider.disabled = True
+    for spring_constant_slider in spring_constants_sliders:
+        spring_constant_slider.disabled = True
+    mass_slider.disabled = True
+    initial_velocity_slider.disabled = True
+    friction_slider.disabled = True
     preset_menu.disabled = True
+    cliffheightslider.disabled = True
+    slopeslider.disabled = True
+    loopslider.disabled = True
     
-    # enable the user to press the launch button
+    # only UI element that gets enabled after start
     launch_button.disabled = False
 scene.append_to_caption(left_margin)
 start_button = button(bind=start_button_function, text="Start", background=color.green, pos=scene.caption_anchor)
@@ -41,7 +46,7 @@ launch_button.about_to_launch = False
 launch_button.launched = False
 
 # TODO: reset button doesn't work if you press start and then launch
-# TODO: reset button sets initial position of block to be inside of the spring (fixed after moving spring slider)
+# TODO: reset button doesn't work after launching and then reset
 
 # reset button; also used to initialize all sliders, buttons, and objects
 def reset_button_function(evt):
