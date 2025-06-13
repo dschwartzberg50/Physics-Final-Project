@@ -127,6 +127,7 @@ def reset_button_function(evt):
     block2.up = vec(0, 1, 0)
     block2.pos.y = -(VERTICAL_SPACING + 2*SPRING_RADIUS)/2 + block2.height
     block2.vel = vec(0, 0, 0)
+    block2.fell = False
     
     global energy_graph
     energy_graph.delete()
@@ -271,7 +272,7 @@ scene.append_to_caption("\n")
 # coefficient of friction slider
 def friction_slider_function(evt):
     friction_slider_text.text = f"Coefficient of Friction: {evt.value:.2f}"
-friction_slider = slider(bind=friction_slider_function, min=0, max=1, step=0.01, length=slider_length, pos=scene.caption_anchor)
+friction_slider = slider(bind=friction_slider_function, min=0, max=0.9, step=0.01, length=slider_length, pos=scene.caption_anchor)
 friction_slider_text = wtext(text=f"", pos=scene.caption_anchor)
 
 scene.append_to_caption("\n")
@@ -567,6 +568,9 @@ max_displacement_arrow = arrow(round=True, shaftwidth=0.3, color=hex_to_color("#
 RIGHT_DISTANCE = 2
 block2 = box(size=(SPRING_RADIUS)*vec(1, 1, 1))
 block2.vel = vec(0, 0, 0)
+block2.fell = False
+
+scene.camera.follow(block2)
 
 dt = 1
 t = 0
@@ -651,14 +655,15 @@ def run2():
 def run3():
     if preset_menu.index == 0: # cliff
         # past the cliff's ledge
-        if block2.pos.x - block2.length/2 > ground.length:
+        if not block2.fell and block2.pos.x - block2.length/2 > ground.length:
             acc = -GRAVITY
             block2.vel.y += acc * dt
         
-        # looks bad but generally works
-        if block2.pos.y <= endofcliff.pos.y:
+        print(block2.fell)
+        if not block2.fell and block2.pos.y <= endofcliff.pos.y:
             block2.pos.y = endofcliff.pos.y + block2.height/2
             block2.vel.y = 0
+            block2.fell = True
         
         block2.pos += block2.vel * dt
     elif preset_menu.index == 1: # slope
@@ -673,11 +678,11 @@ def run3():
     
         if block.pos.x > 60:
             theta = slopeslider.value
-            a = -gravity * sin(theta)*.01  
-            block.vel += a * dt        
+            a = -gravity * sin(theta)*.01  # acceleration along the slope
+            block.vel += a * dt        # update velocity along slope
     
-            dx = block.vel * dt * cos(theta)  
-            dy = block.vel * dt * sin(theta)  
+            dx = block.vel * dt * cos(theta)  # x component
+            dy = block.vel * dt * sin(theta)  # y component
     
             block.pos.x += dx
             block.pos.y += dy*144
@@ -711,5 +716,6 @@ while (True):
         pass
         
     t += dt
+
 
 # unreachable
