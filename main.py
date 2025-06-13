@@ -10,8 +10,11 @@ def hex_to_color(color_string):
     
     return vec(*rgb_list)
     
+def lerp(a, b, t):
+    return a + (b-a)*t
+    
 scene = canvas(width=600, height=660, align="left")
-scene.camera.pos = vec(31.3822, -0.790668, 62.5785)
+scene.camera.pos = vec(24.0448, 0.133734, 49.8782)
 
 left_margin = "  "
 slider_length = 200
@@ -124,9 +127,18 @@ def reset_button_function(evt):
     set_max_displacement_arrow()
     
     block2.up = vec(0, 1, 0)
+    L = calculate_total_spring_length(n=spring_slider.max)
+    block2.pos.x = L + RIGHT_DISTANCE
     block2.pos.y = -(VERTICAL_SPACING + 2*SPRING_RADIUS)/2 + block2.height
     block2.vel = vec(0, 0, 0)
     block2.past = False
+    
+    ground.length = block2.pos.x
+    ground.pos = vec(ground.length/2, -1, 0)
+    
+    ground2.length = 10
+    ground2.pos = ground.pos + vec(ground.length/2 + ground2.length/2, 0, 0)
+    
     
     global energy_graph
     energy_graph.delete()
@@ -243,8 +255,9 @@ def calculate_single_spring_length():
     springs_list = get_springs_list()
     return springs_list[0].length
 
-def calculate_total_spring_length():
-    n = spring_slider.value if spring_mode_button.is_series_mode else 1
+def calculate_total_spring_length(n=None):
+    if n is None:
+        n = spring_slider.value if spring_mode_button.is_series_mode else 1
     spring_length = calculate_single_spring_length()
     return horizontal_spacing + n*(horizontal_spacing + spring_length)
     
@@ -275,6 +288,8 @@ scene.append_to_caption("\n")
 # coefficient of friction slider
 def friction_slider_function(evt):
     friction_slider_text.text = f"Coefficient of Friction: {evt.value:.2f}"
+        
+    ground2.color = lerp(MIN_FRICTION_COLOR, MAX_FRICTION_COLOR, evt.value)    
 friction_slider = slider(bind=friction_slider_function, min=0, max=0.9, step=0.01, length=slider_length, pos=scene.caption_anchor)
 friction_slider_text = wtext(text=f"", pos=scene.caption_anchor)
 
@@ -416,8 +431,7 @@ def set_visisble_springs():
             c1.visible = True
             c2.visible = True
     
-# set both blocks' position to be in the correct spots for the given spring mode and amount of springs
-# also sets the correct height for block 1 in parallel mode
+# sets block 1's attributes to be in the correct initial position
 def set_block_attributes():
     # block 1: x
     total_length = calculate_total_spring_length()
@@ -426,14 +440,7 @@ def set_block_attributes():
     # block 1: height
     n = spring_slider.value if (not spring_mode_button.is_series_mode) else 1
     block.height = n*(VERTICAL_SPACING + 2*SPRING_RADIUS)
-    
-    # block 1: y
-    block.pos.y = (block.height - 2*SPRING_RADIUS) / 2
-    
-    # block 2: x
-    A = calculate_maximum_displacement()
-    block2.pos.x = block.pos.x + (A + RIGHT_DISTANCE)
-    
+
 def set_equilibrium_position():
     equilibrium_point.pos = block.pos + vec(0, block.height/2 + HEIGHT_ABOVE_BLOCK, 0)
     
@@ -520,9 +527,33 @@ preset_menu = menu(bind=preset_select, choices=preset_list)
 
 scene.append_to_caption("\n")
 
-# initialize all objects
-ground = box(pos=vec(15, -1, 0), length=30, height=.1, width=1, color=color.white)
-# ground2 = 
+# initialize the blocks
+block = box(length=1, height=2*SPRING_RADIUS, width=1)
+block.vel = 0
+
+RIGHT_DISTANCE = 2
+block2 = box(size=(SPRING_RADIUS)*vec(1, 1, 1))
+block2.vel = vec(0, 0, 0)
+block2.past = False
+
+# initialize the other visuals
+HEIGHT_ABOVE_BLOCK = 1
+equilibrium_point = sphere(radius=0.5, color=color.green)
+
+max_displacement_arrow = arrow(round=True, shaftwidth=0.3, color=hex_to_color("#fc037b"))
+
+# initialize the rest of the objects (floors, walls, slope, cliff, loop)
+
+# set the ground based on the intial position of block 2
+ground = box(height=.1, width=1, color=color.white)
+# ground.length = block2.pos.x
+# ground.pos = vec(ground.length/2, -1, 0)
+
+MIN_FRICTION_COLOR = color.white
+MAX_FRICTION_COLOR = color.red
+ground2 = box(height=.1, width=1)
+# ground2.length = 10
+# ground2.pos = ground.pos + vec(ground2.length/2, -1, 0)
 
 cliffheight = box(pos=vec(30, -16, 0), length=.1, height=30, width=1, color=color.white)
 cliffstopper = box(pos=vec(90,-29,0), length=.1, height = 5, width=1, color=color.white)
@@ -569,19 +600,6 @@ def loopfunc(evt):
     loopradius.pos= vec(31,evt.value-1,-1)
 loopslider = slider(bind=loopfunc, min=6, max=20, step=1, length=slider_length, pos=scene.caption_anchor)
 loop_radius_slider_text = wtext(text="", pos=scene.caption_anchor)
-
-block = box(length=1, height=2*SPRING_RADIUS, width=1)
-block.vel = 0
-
-HEIGHT_ABOVE_BLOCK = 1
-equilibrium_point = sphere(radius=0.5, color=color.green)
-
-max_displacement_arrow = arrow(round=True, shaftwidth=0.3, color=hex_to_color("#fc037b"))
-
-RIGHT_DISTANCE = 2
-block2 = box(size=(SPRING_RADIUS)*vec(1, 1, 1))
-block2.vel = vec(0, 0, 0)
-block2.past = False
 
 dt = 1
 t = 0
@@ -652,7 +670,7 @@ def run1(state):
         if launch_button.about_to_launch and block.vel > 0 and block.pos.x >= equilibrium_point.pos.x:
             launch_button.about_to_launch = False
             launch_button.launched = True
-      
+            
 def run2():
     # simulate collision
     if block.pos.x + block.length/2 >= block2.pos.x - block2.length/2:
