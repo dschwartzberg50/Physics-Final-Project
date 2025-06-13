@@ -1,4 +1,5 @@
-Web Vpython 3.2
+# Web Vpython 3.2
+from vpython import *
 
 def hex_to_color(color_string):
     color_string = color_string.lstrip("#")
@@ -36,19 +37,20 @@ def launch_button_function(evt):
     launch_button.disabled = True
 scene.append_to_caption(" ")
 launch_button = button(bind=launch_button_function, text="Launch", background=color.blue, pos=scene.caption_anchor)
+launch_button.about_to_launch = False
 
 # TODO: reset button doesn't work if you press start and then launch
+# TODO: reset button sets initial position of block to be inside of the spring (fixed after moving spring slider)
+
 # reset button; also used to initialize all sliders, buttons, and objects
 def reset_button_function(evt):
     start_button.disabled = False
-    start_button.started = False
     
     launch_button.disabled = True
-    launch_button.launched = False
     launch_button.about_to_launch = False
     
     spring_mode_button.disabled = False
-    spring_mode_button.is_series_mode = False
+    spring_mode_button.is_series_mode = False # this is swapped once the function is called
     spring_mode_button_function(spring_mode_button)
     
     spring_slider.disabled = False
@@ -56,10 +58,9 @@ def reset_button_function(evt):
     spring_slider_function(spring_slider)
     
     for spring_constants_slider in spring_constants_sliders:
-        spring_constants_slider.disabled = True
         spring_constants_slider.value = 1
         spring_constant_slider_function(spring_constants_slider)
-    
+
     mass_slider.disabled = False
     mass_slider.value = 20
     mass_slider_function(mass_slider)
@@ -72,6 +73,8 @@ def reset_button_function(evt):
     friction_slider.value = 0
     friction_slider_function(friction_slider)
     
+    #### above is all working
+    
     horizontal_spacing = INIT_HORIZONTAL_SPACING
     
     # TODO: this breaks on reset for some reason
@@ -81,12 +84,21 @@ def reset_button_function(evt):
 
     for i, this_curve in enumerate(series_lines_list):
         curve_points = create_series_curve_points(i, horizontal_spacing, INIT_SPRING_LENGTH)
-        assert this_curve.npoints == len(curve_points)
         for point_index in range(this_curve.npoints):
             this_curve.modify(point_index, pos=curve_points[point_index], color=color.red, radius=CURVE_THICKNESS)
     
-    # TODO: reset parallel springs stuff as well
+    for i, parallel_spring in enumerate(parallel_springs_list):
+        parallel_spring.pos = vec(horizontal_spacing, i * (2*SPRING_RADIUS + VERTICAL_SPACING), 0)
+        series_spring.axis = vec(INIT_SPRING_LENGTH, 0, 0)
     
+    for i, (c1, c2) in enumerate(parallel_lines_list):
+        points1 = create_parallel_curve_points(i, VERTICAL_SPACING, horizontal_spacing, INIT_SPRING_LENGTH, False)
+        for point_index in range(c1.npoints):
+            c1.modify(point_index, pos=points1[point_index], color=color.red, radius=CURVE_THICKNESS)
+        points2 = create_parallel_curve_points(i, VERTICAL_SPACING, horizontal_spacing, INIT_SPRING_LENGTH, True)
+        for point_index in range(c2.npoints):
+            c2.modify(point_index, pos=points2[point_index], color=color.red, radius=CURVE_THICKNESS)
+        
     preset_menu.disabled = False
     preset_menu.index = 0
     preset_select(preset_menu)
@@ -100,13 +112,10 @@ def reset_button_function(evt):
     loopslider.value = 10
     loopfunc(loopslider)
     
-    block.height = VERTICAL_SPACING + 2*SPRING_RADIUS
-    block.pos = vec(4, (block.height - 2*SPRING_RADIUS) / 2, 0)
-    
-    equilibrium_point.pos = block.pos + vec(0, block.height/2 + HEIGHT_ABOVE_BLOCK, 0)
-    
-    A = calculate_maximum_displacement()
-    block2.pos = block.pos + vec(A + RIGHT_DISTANCE, 0, 0)
+    set_visisble_springs()
+    set_block_positions()
+    set_equilibrium_position()
+    set_max_displacement_arrow()
     
     global energy_graph
     energy_graph.delete()
@@ -151,18 +160,6 @@ def spring_mode_button_function(evt):
         spring_mode_button.text = "Parallel"
         spring_mode_button.background = hex_to_color("#34a1eb")
 
-    # make everything invisible
-    for spring in series_springs_list:
-        spring.visible = False
-    for spring in parallel_springs_list:
-        spring.visible = False
-    for series_line in series_lines_list:
-        series_line.visible = False
-    for c1, c2 in parallel_lines_list:
-        c1.visible = False
-        c2.visible = False
-    
-    # this makes the correct springs visible
     spring_slider_function(spring_slider)
 scene.append_to_caption(left_margin)
 spring_mode_button = button(bind=spring_mode_button_function, text="Series", pos=scene.caption_anchor)
@@ -173,64 +170,15 @@ scene.append_to_caption("\n")
 # spring slider (# of springs)
 def spring_slider_function(evt):
     spring_slider_text.text = f"Number of Springs: {evt.value:.0f}"
-    
-    # choose the corresponding list of springs/curves
-    springs_list = series_springs_list if spring_mode_button.is_series_mode else parallel_springs_list
-    lines_list = series_lines_list if spring_mode_button.is_series_mode else parallel_lines_list
-    
-    # set everything invisible by default
-    for spring in springs_list:
-        spring.visible = False
-    if spring_mode_button.is_series_mode:
-        for series_line in lines_list:
-            series_line.visible = False
-    else:
-        for c1, c2 in lines_list:
-            c1.visible = False
-            c2.visible = False
         
-    # set the first n springs to be visible
-    for i in range(evt.value):
-        springs_list[i].visible = True
+    set_visisble_springs()
     
-    if spring_mode_button.is_series_mode: # series only stuff
-        # note: the first curve should always be visible
-        # set the first n curves to be visible after i=0
-        for i in range(evt.value+1):
-            lines_list[i].visible = True
-            # make the last segment visible in case it was previously invisible
-            this_curve = lines_list[i]
-            this_curve.modify(this_curve.npoints-1, visible=True)
-        
-        # make the last segment of the last visible curve not visible
-        last_curve = lines_list[evt.value]
-        last_curve.modify(last_curve.npoints-1, visible=False)
-    else: # parallel only stuff
-        for i in range(evt.value):
-            c1, c2 = lines_list[i] # tuple of curves
-            c1.visible = True
-            c2.visible = True
+    set_block_positions()
     
-    # set the new attributes of the block
-    v1 = evt.value if (spring_mode_button.is_series_mode) else 1
-    spring_length = springs_list[0].length
-    total_length = horizontal_spacing + v1*(horizontal_spacing + spring_length)
-    block.pos.x = total_length + block.length/2
+    set_equilibrium_position()
     
-    A = calculate_maximum_displacement()
-    block2.pos = block.pos + vec(A + RIGHT_DISTANCE, 0, 0)
+    set_max_displacement_arrow()
     
-    v2 = evt.value if (not spring_mode_button.is_series_mode) else 1
-    block.height = v2*(VERTICAL_SPACING + 2*SPRING_RADIUS)
-    block.pos.y = (block.height - 2*SPRING_RADIUS) / 2
-    
-    # set the x-position of the equilibrium point (always the initial x-position of the block)
-    equilibrium_point.pos = block.pos + vec(0, block.height/2 + HEIGHT_ABOVE_BLOCK, 0)
-    
-    # calculate and set the maximum intiial velocity of the block so it doesn't go past x=0
-    k = calculate_equivalent_k()
-    max_displacement = equilibrium_point.pos.x
-    block.max_initial_vel = sqrt(k/mass_slider.value * max_displacement**2)
     initial_velocity_slider_function(initial_velocity_slider)
     
     # set the first n spring constant sliders to be on
@@ -243,11 +191,6 @@ spring_slider_text = wtext(text="", pos=scene.caption_anchor)
 def spring_constant_slider_function(evt):
     spring_constants_texts[evt.id].text = f"Spring #{(evt.id)+1}: k={evt.value:.1f}"
     
-    for spring_constants_slider in spring_constants_sliders:
-        spring_constants_slider.disabled = True
-    for i, spring_constants_slider in zip(range(spring_slider.value), spring_constants_sliders):
-        spring_constants_slider.disabled = False
-        
     # adjust the color maybe ?!?! TODO
     pass
 spring_constants_sliders = []
@@ -272,10 +215,25 @@ def calculate_equivalent_k():
     else:
         return sum(spring_slider.value for spring_slider in spring_constants_sliders)
 
+# TODO: what is this used for
 def calculate_maximum_displacement():
     k = calculate_equivalent_k()
     return sqrt(mass_slider.value / k * (block.vel**2))
+    
+def calculate_maximum_initial_velocity():
+    k = calculate_equivalent_k()
+    max_displacement = equilibrium_point.pos.x - 1 # arbitrary max displacement
+    return sqrt(k/mass_slider.value * max_displacement**2)
+    
+def calculate_single_spring_length():
+    springs_list = get_springs_list()
+    return springs_list[0].length
 
+def calculate_total_spring_length():
+    n = spring_slider.value if spring_mode_button.is_series_mode else 1
+    spring_length = calculate_single_spring_length()
+    return horizontal_spacing + n*(horizontal_spacing + spring_length)
+    
 scene.append_to_caption("\n")
 scene.append_to_caption("\n")
 
@@ -289,10 +247,12 @@ scene.append_to_caption("\n")
 
 # initial velocity slider
 def initial_velocity_slider_function(evt):
-    block.vel = block.max_initial_vel * initial_velocity_slider.value # slider ranges from 0-1, acting as a percentage
+    block.vel = calculate_maximum_initial_velocity() * initial_velocity_slider.value
     initial_velocity_slider_text.text = f"Initial Velocity: {block.vel:.2f}"    
-initial_velocity_slider = slider(bind=initial_velocity_slider_function, min=0, max=0.95, step=0.01, length=slider_length, pos=scene.caption_anchor)
-initial_velocity_slider_text = wtext(text=f"Initial Velocity: {-4000}", pos=scene.caption_anchor)
+        
+    set_max_displacement_arrow()
+initial_velocity_slider = slider(bind=initial_velocity_slider_function, min=0, max=1, step=0.01, length=slider_length, pos=scene.caption_anchor)
+initial_velocity_slider_text = wtext(text=f"", pos=scene.caption_anchor)
 
 scene.append_to_caption("\n")
 
@@ -395,10 +355,81 @@ for i in range(spring_slider.max):
        (c1, c2) # tuple of both curves
     )
     
+def get_springs_list():
+    return series_springs_list if spring_mode_button.is_series_mode else parallel_springs_list
+
+def get_lines_list():
+    return series_lines_list if spring_mode_button.is_series_mode else parallel_lines_list
+    
+# sets the visibility of each spring/curve
+# does not change the attributes of any of the springs
+def set_visisble_springs():
+    # set everything invisible by default
+    for spring in series_springs_list:
+        spring.visible = False
+    for spring in parallel_springs_list:
+        spring.visible = False
+    for series_line in series_lines_list:
+        series_line.visible = False
+    for c1, c2 in parallel_lines_list:
+        c1.visible = False
+        c2.visible = False
+    
+    springs_list = get_springs_list()
+    lines_list = get_lines_list()
+        
+    # set the first n springs to be visible
+    for i in range(spring_slider.value):
+        springs_list[i].visible = True
+    
+    if spring_mode_button.is_series_mode: # series only stuff
+        # note: the first curve should always be visible
+        # set the first n curves to be visible after i=0
+        for i in range(spring_slider.value+1):
+            lines_list[i].visible = True
+            # make the last segment visible in case it was previously invisible
+            this_curve = lines_list[i]
+            this_curve.modify(this_curve.npoints-1, visible=True)
+        
+        # make the last segment of the last visible curve not visible
+        last_curve = lines_list[spring_slider.value]
+        last_curve.modify(last_curve.npoints-1, visible=False)
+    else: # parallel only stuff
+        for i in range(spring_slider.value):
+            c1, c2 = lines_list[i] # tuple of curves
+            c1.visible = True
+            c2.visible = True
+    
+# set both blocks' position to be in the correct spots for the given spring mode and amount of springs
+# also sets the correct height for block 1 in parallel mode
+def set_block_positions():
+    # block 1: x
+    total_length = calculate_total_spring_length()
+    block.pos.x = total_length + block.length/2
+    
+    # block 1: height
+    n = spring_slider.value if (not spring_mode_button.is_series_mode) else 1
+    block.height = n*(VERTICAL_SPACING + 2*SPRING_RADIUS)
+    
+    # block 1: y
+    block.pos.y = (block.height - 2*SPRING_RADIUS) / 2
+    
+    # block 2: x
+    A = calculate_maximum_displacement()
+    block2.pos.x = block.pos.x + (A + RIGHT_DISTANCE)
+    
+def set_equilibrium_position():
+    equilibrium_point.pos = block.pos + vec(0, block.height/2 + HEIGHT_ABOVE_BLOCK, 0)
+    
+# TODO
+def set_max_displacement_arrow():
+    max_displacement_arrow.pos = equilibrium_point.pos
+    max_displacement_arrow.axis = vec(calculate_maximum_displacement(), 0, 0)
+
 # modify the springs based on the block's position
 def modify_springs():
     global horizontal_spacing
-    springs_list = series_springs_list if spring_mode_button.is_series_mode else parallel_springs_list
+    springs_list = get_springs_list()
     n = spring_slider.value
     
     d0 = horizontal_spacing
@@ -413,7 +444,6 @@ def modify_springs():
         for i, this_curve in enumerate(series_lines_list):
             new_points = create_series_curve_points(i, d, l)
             
-            assert this_curve.npoints == len(new_points)
             for point_index in range(this_curve.npoints):
                 this_curve.modify(point_index, pos=new_points[point_index], color=color.red, radius=CURVE_THICKNESS)
 
@@ -443,7 +473,7 @@ def modify_springs():
             
     horizontal_spacing = d
 
-# # menu for scenarios
+# menu for scenarios
 preset_list = ["Cliff", "Slope", "Loop", "Coaster"]
 def preset_select(evt):
     # make everything invisible / disabled
@@ -455,6 +485,7 @@ def preset_select(evt):
     cliffheightslider.disabled = True
     loopslider.disabled = True
     slopeslider.disabled = True
+    
     if evt.index == 0:
         cliffheight.visible = True
         endofcliff.visible = True
@@ -488,7 +519,7 @@ def cliffheightfunc(evt):
     cliffheight.pos.y = -evt.value/2-1
     endofcliff.pos.y = -evt.value-1
 cliffheightslider = slider(bind=cliffheightfunc, min=5, max=50, step=1, length=slider_length, pos=scene.caption_anchor) 
-cliff_height_slider_text = wtext(text=f"Height: {cliffheightslider.value}", pos=scene.caption_anchor)
+cliff_height_slider_text = wtext(text=f"", pos=scene.caption_anchor)
 
 scene.append_to_caption("\n")
 
@@ -515,13 +546,16 @@ loop_radius_slider_text = wtext(text="", pos=scene.caption_anchor)
 
 wall = box(pos=vec(0,12.5/2,0), height=15, width=5, length=0.1)
 block = box(length=1, height=2*SPRING_RADIUS, width=1)
+block.vel = 0
 
 HEIGHT_ABOVE_BLOCK = 1
 equilibrium_point = sphere(radius=0.5, color=color.green)
 
+max_displacement_arrow = arrow(round=True, shaftwidth=0.3, color=hex_to_color("#fc037b"))
+
 RIGHT_DISTANCE = 2
-block2 = box(length=1, height=1, width=1)
-block2.pos.y = block2.height/2 # TODO make this work
+block2 = box(size=(SPRING_RADIUS)*vec(1, 1, 1))
+block2.pos.y = -(VERTICAL_SPACING + 2*SPRING_RADIUS)/2 + block2.height
 block2.vel = 0
 
 dt = 0.01
