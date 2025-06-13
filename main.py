@@ -1,5 +1,4 @@
-# Web Vpython 3.2
-from vpython import *
+Web Vpython 3.2
 
 def hex_to_color(color_string):
     color_string = color_string.lstrip("#")
@@ -17,6 +16,7 @@ scene.camera.pos = vec(10, 0, 20)
 left_margin = "  "
 slider_length = 200
 
+# TODO: disable everything
 # start button
 def start_button_function(evt):
     # disable all UI elements to control the intial conditions
@@ -38,6 +38,7 @@ def launch_button_function(evt):
 scene.append_to_caption(" ")
 launch_button = button(bind=launch_button_function, text="Launch", background=color.blue, pos=scene.caption_anchor)
 launch_button.about_to_launch = False
+launch_button.launched = False
 
 # TODO: reset button doesn't work if you press start and then launch
 # TODO: reset button sets initial position of block to be inside of the spring (fixed after moving spring slider)
@@ -48,6 +49,7 @@ def reset_button_function(evt):
     
     launch_button.disabled = True
     launch_button.about_to_launch = False
+    launch_button.launched = False
     
     spring_mode_button.disabled = False
     spring_mode_button.is_series_mode = False # this is swapped once the function is called
@@ -119,7 +121,7 @@ def reset_button_function(evt):
     
     global energy_graph
     energy_graph.delete()
-    energy_graph = graph(width=300, height=350, title="Energy vs Time", xtitle="Time", ytitle="Energy", align="right")
+    energy_graph = graph(width=300, height=350, title="Energy vs Time", xtitle="Time", ytitle="Energy", align="left")
     
     global K_curve
     K_curve.delete()
@@ -133,7 +135,7 @@ def reset_button_function(evt):
     
     global pos_graph
     pos_graph.delete()
-    pos_graph = graph(width=300, height=350, title="Position vs Time", xtitle="Time", ytitle="Position", align="right")
+    pos_graph = graph(width=300, height=350, title="Position vs Time", xtitle="Time", ytitle="Position", align="left")
     
     global pos_curve
     pos_curve.delete()
@@ -215,7 +217,6 @@ def calculate_equivalent_k():
     else:
         return sum(spring_slider.value for spring_slider in spring_constants_sliders)
 
-# TODO: what is this used for
 def calculate_maximum_displacement():
     k = calculate_equivalent_k()
     return sqrt(mass_slider.value / k * (block.vel**2))
@@ -421,7 +422,6 @@ def set_block_positions():
 def set_equilibrium_position():
     equilibrium_point.pos = block.pos + vec(0, block.height/2 + HEIGHT_ABOVE_BLOCK, 0)
     
-# TODO
 def set_max_displacement_arrow():
     max_displacement_arrow.pos = equilibrium_point.pos
     max_displacement_arrow.axis = vec(calculate_maximum_displacement(), 0, 0)
@@ -558,12 +558,11 @@ block2 = box(size=(SPRING_RADIUS)*vec(1, 1, 1))
 block2.pos.y = -(VERTICAL_SPACING + 2*SPRING_RADIUS)/2 + block2.height
 block2.vel = 0
 
-dt = 0.01
+dt = 1
 t = 0
 
 # graphs setup
-TIME_INTERVAL = 1/2
-MAX_T_POINTS = int(TIME_INTERVAL / dt)
+MAX_T_POINTS = 100
 
 energy_graph = graph()
 K_curve = gcurve()
@@ -578,17 +577,19 @@ pos_data = []
 # initializes everything to have its intended intial value and/or state
 reset_button_function(reset_button)
 
-# initial while loop for spring-oscillatory motion    
-while (True):
-    rate(1/dt)
-    
-    if (launch_button.about_to_launch and block.vel > 0 and block.pos.x >= equilibrium_point.pos.x): break
-    if (not start_button.disabled): continue
+def get_state():
+    if not (start_button.disabled): return 0
+    if not (launch_button.disabled): return 1
+    if launch_button.about_to_launch: return 2
+    if launch_button.launched: return 3
         
-    # these are used for multiple things, calculate them early
+    return None
+    
+def run1(state):
+    global t
     k = calculate_equivalent_k()
     delta_x = block.pos.x - equilibrium_point.pos.x
-
+    
     # update graphs
     # kinetic energy 
     if not (len(K_data) < MAX_T_POINTS):
@@ -613,24 +614,41 @@ while (True):
     # euler's method
     force = -k * delta_x
     acc = force / mass_slider.value
-    block.vel += acc
-    block.pos.x += block.vel
+    block.vel += acc * dt
+    block.pos.x += block.vel * dt
     
     # update the entire spring setup
     modify_springs()
     
-launch_button.disabled = True
-    
-# TODO: integrate these into one while loop
-# second while loop for projectile motion after block has been launched
-while (True):
-    rate(1/dt)
-    
-    # when the right side of block collides with the left side of block2
+    if state == 2:
+        launch_button.disabled = True
+        if launch_button.about_to_launch and block.vel > 0 and block.pos.x >= equilibrium_point.pos.x:
+            launch_button.about_to_launch = False
+            launch_button.launched = True
+            
+def run2():
     if block.pos.x + block.length/2 >= block2.pos.x - block2.length/2:
         block2.vel = block.vel
         block.vel = 0
     
     block.pos.x += block.vel
     block2.pos.x += block2.vel
-    pass
+
+while (True):
+    rate(100)
+    
+    state = get_state()
+    
+    # before pressing start
+    if state == 0:
+        pass
+    # after pressing start, before launch
+    elif state == 1 or state == 2:
+        run1(state)
+    # after launching
+    elif state == 3:
+        run2()
+    else:
+        pass
+
+# unreachable
