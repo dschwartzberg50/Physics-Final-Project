@@ -673,11 +673,11 @@ def run3():
     
         if block.pos.x > 60:
             theta = slopeslider.value
-            a = -gravity * sin(theta)*.01  # acceleration along the slope
-            block.vel += a * dt        # update velocity along slope
+            a = -gravity * sin(theta)*.01  
+            block.vel += a * dt        
     
-            dx = block.vel * dt * cos(theta)  # x component
-            dy = block.vel * dt * sin(theta)  # y component
+            dx = block.vel * dt * cos(theta)  
+            dy = block.vel * dt * sin(theta)  
     
             block.pos.x += dx
             block.pos.y += dy*144
