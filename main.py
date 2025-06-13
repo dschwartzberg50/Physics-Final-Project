@@ -51,6 +51,10 @@ launch_button.launched = False
 # TODO: reset button doesn't work after launching and then reset
 
 # reset button; also used to initialize all sliders, buttons, and objects
+
+#blocking walls set up
+wall2 = box(pos=vec(30, 14, 0), length=.1, height=30, width=1, color=color.white)
+wall2.visible = False
 def reset_button_function(evt):
     start_button.disabled = False
     
@@ -154,6 +158,8 @@ def reset_button_function(evt):
     
     global t
     t = 0
+    
+    wall2.visible= False
     
 scene.append_to_caption(" ")
 reset_button = button(bind=reset_button_function, text="Reset", background=color.yellow, pos=scene.caption_anchor)
@@ -650,9 +656,10 @@ def run2():
     
     block.pos.x += block.vel * dt
     block2.pos.x += block2.vel.x * dt
-
 # TODO: implement friction
 def run3():
+    if block2.pos.x - block2.length/2 > ground.length:
+        wall2.visible = True
     if preset_menu.index == 0: # cliff
         # past the cliff's ledge
         if not block2.fell and block2.pos.x - block2.length/2 > ground.length:
@@ -676,16 +683,16 @@ def run3():
         # block2.pos += vel * dt
         block.pos.x += block.vel  # pre-slope horizontal motion
     
-        if block.pos.x > 60:
+        if block2.pos.x > 60:
             theta = slopeslider.value
             a = -gravity * sin(theta)*.01  # acceleration along the slope
-            block.vel += a * dt        # update velocity along slope
+            block2.vel += a * dt        # update velocity along slope
     
-            dx = block.vel * dt * cos(theta)  # x component
-            dy = block.vel * dt * sin(theta)  # y component
+            dx = block2.vel * dt * cos(theta)  # x component
+            dy = block2.vel * dt * sin(theta)  # y component
     
-            block.pos.x += dx
-            block.pos.y += dy*144
+            block2.pos.x += dx
+            block2.pos.y += dy*144
             
         # TODO fix the values here
         
@@ -716,6 +723,5 @@ while (True):
         pass
         
     t += dt
-
 
 # unreachable
