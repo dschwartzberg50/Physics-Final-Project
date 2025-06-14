@@ -128,6 +128,8 @@ def reset_button_function(evt):
     block2.pos.y = ground2.pos.y + ground2.height/2 + block2.height/2
     block2.vel = vec(0, 0, 0)
     block2.past = False
+    block2.hitright = False
+    block2.hitbottom = False
     
     preset_menu.disabled = False
     preset_menu.index = 0
@@ -543,6 +545,8 @@ RIGHT_DISTANCE = 2
 block2 = box(size=(SPRING_RADIUS)*vec(1, 1, 1))
 block2.vel = vec(0, 0, 0)
 block2.past = False
+block2.hitright = False
+block2.hitbottom = False
 
 def block2_is_past_ground2():
     return (block2.pos.x - block2.length/2) > (ground2.pos.x + ground2.length/2)
@@ -635,7 +639,7 @@ def get_state():
     if not (launch_button.disabled): return 1
     if launch_button.about_to_launch: return 2
     if launch_button.launched:
-        if not (block2.vel.x > 0): return 3
+        if block.vel != 0: return 3
         else: return 4
         
     return None
@@ -693,24 +697,32 @@ def run3():
     if block2_is_past_ground2():
         wall2.visible = True
     if preset_menu.index == 0: # cliff
-        if block2.past:
-            acc = -GRAVITY
-            block2.vel.y += acc * dt
-        
-        if (block2.pos.y - block2.height/2) <= (endofcliff.pos.y + endofcliff.height/2):
-            block2.vel.y = 0 
-            block.pos.y = endofcliff.pos.y + endofcliff.height/2 + block2.height/2
-            
         if not block2.past and block2_is_past_ground2():
             block2.past = True
-            # block2.vel.y = 0
         
-        if (block2.pos.x + block2.length/2) >= (cliffstopper.pos.x - cliffstopper.length/2):
+        if block2.past:
+            # apply gravity
+            acc = -GRAVITY
+            block2.vel.y += acc * dt
+        else:
+            if block2.vel.x > 0:
+                # apply friction
+                force = -(mass_slider.value * GRAVITY * friction_slider.value)
+                acc = force / mass_slider.value
+                block2.vel.x += acc * dt
+            else:
+                block2.vel.x = 0
+        
+        # align the block with the floor
+        if (block2.pos.y - block2.height/2) < (endofcliff.pos.y + endofcliff.height/2):
+            block2.vel.y = 0 
+            block2.pos.y = endofcliff.pos.y + endofcliff.height/2 + block2.height/2
+            
+        # align the block with the wall
+        if (block2.pos.x + block2.length/2) > (cliffstopper.pos.x - cliffstopper.length/2):
             block2.vel.x = 0
             block2.pos.x = cliffstopper.pos.x - cliffstopper.length/2 - block2.length/2
             
-        
-        
     # TODO: fix this
     elif preset_menu.index == 1: # slope
         block.pos.x += block.vel  # pre-slope horizontal motion
