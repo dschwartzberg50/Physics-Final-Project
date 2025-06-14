@@ -13,8 +13,8 @@ def hex_to_color(color_string):
 def lerp(a, b, t):
     return a + (b-a)*t
     
-def within(a, b, epsilon=0.01):
-    return abs(a-b) <= epsilon
+def inv_lerp(a,b,v):
+    return (v-a)/(b-a)
     
 scene = canvas(width=600, height=660, align="left")
 scene.camera.pos = vec(24.0448, 0.133734, 49.8782)
@@ -129,7 +129,6 @@ def reset_button_function(evt):
     block2.vel = vec(0, 0, 0)
     block2.past = False
     block2.looped = False
-    block2.started_loop = False
     
     preset_menu.disabled = False
     preset_menu.index = 0
@@ -152,6 +151,8 @@ def reset_button_function(evt):
     
     loopground.length = 20
     loopground.pos = ground2.pos + vec(ground2.length/2 + loopground.length/2, 0, -WIDTH)
+    
+    loopstopper.pos = loopground.pos + vec(loopground.length/2, loopstopper.height/2,0 )
     
     loopslider.value = 10
     loopfunc(loopslider)
@@ -554,7 +555,6 @@ block2 = box(size=(SPRING_RADIUS)*vec(1, 1, 1))
 block2.vel = vec(0, 0, 0)
 block2.past = False
 block2.looped = False
-block2.started_loop = False
 
 def block2_is_past_ground2():
     return (block2.pos.x - block2.length/2) > (ground2.pos.x + ground2.length/2)
@@ -584,7 +584,7 @@ slopeangle = box(pos=vec(46, 15, 0), length=45, height=.1, width=1,axis=vec(1,1,
 loopradius = helix(axis=vec(0, 0, 1), coils=1, color=color.white, thickness=1)
 loopradius.rotate(axis=vec(0, 0, 1), angle=(pi/2), origin=vec(loopradius.pos+loopradius.axis/2))
 loopground = box(height=HEIGHT, width=WIDTH, color=color.white)
-loopstopper = box(pos=vec(60, 2, -1), length=.1, height=6, width=1, color=color.white)
+loopstopper = box(length=HEIGHT, height=15, width=WIDTH, color=color.white)
 
 # cliff height slider
 def cliffheightfunc(evt):
@@ -755,26 +755,28 @@ def run3():
                 radius = loopradius.radius - loopradius.thickness
                 center = loopradius.pos + loopradius.axis
                 center.z = 0
+                other = block2.pos
+                other.z = 0
                 
-                centripetal_acceleration = ((block2.vel.mag**2) / radius) * (center - block2.pos).hat
+                centripetal_acceleration = ((block2.vel.mag**2) / radius) * (center - other).hat
                 block2.vel += centripetal_acceleration * dt
                 
                 # make the block face the center
-                block2.up = block2.pos - center 
+                block2.up = other - center 
             
-            small_angle = radians(20)
             if not block2.looped:
                 angle = atan2(-block2.up.y, -block2.up.x)
-                print(angle)
-                if block2.started_loop:
-                    if within(angle, pi/2 + small_angle):
-                        block2.looped = True
-                        block2.vel = vec(block2.vel.mag, 0, 0)
-                        block2.up = vec(0, 1, 0)
-                else:
-                    if within(angle, pi/2 + small_angle):
-                        block2.started_loop = True
-
+                percent = ((angle - pi/2)%(2*pi)) / (2*pi)
+                block2.pos.z = lerp(0, loopground.pos.z, percent)
+                if inv_lerp(0, loopground.pos.z, block2.pos.z) >= 0.98:
+                    block2.looped = True
+                    block2.vel = vec(block2.vel.mag, 0, 0)
+                    block2.up = vec(0, 1, 0)
+        
+        if (block2.pos.x + block2.length/2) > (loopstopper.pos.x - loopstopper.length/2):
+            block2.vel.x = 0
+            block2.pos.x = loopstopper.pos.x - loopstopper.length/2 - block2.length/2
+        
     else:
         pass
     
