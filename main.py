@@ -112,20 +112,22 @@ def reset_button_function(evt):
     set_equilibrium_position()
     set_max_displacement_arrow()
     
-    block2.up = vec(0, 1, 0)
     L = calculate_total_spring_length(n=spring_slider.max)
-    block2.pos.x = L + RIGHT_DISTANCE
-    block2.pos.y = -(VERTICAL_SPACING + 2*SPRING_RADIUS)/2 + block2.height
-    block2.vel = vec(0, 0, 0)
-    block2.past = False
-    
-    ground.length = block2.pos.x
+    ground.length = L + RIGHT_DISTANCE
     ground.pos = vec(ground.length/2, -block.height/2 - ground.height/2, 0)
     
     ground2.length = 10
     ground2.pos = ground.pos + vec(ground.length/2 + ground2.length/2, 0, 0)
     
     wall.pos = ground.pos + vec(-ground.length/2 - wall.length/2, wall.height/2, 0)
+    
+    wall2.pos = vec(ground2.pos.x + ground2.length/2, ground2.pos.y + wall2.height/2, 0)
+    
+    block2.up = vec(0, 1, 0)
+    block2.pos.x = ground.length
+    block2.pos.y = ground2.pos.y + ground2.height/2 + block2.height/2
+    block2.vel = vec(0, 0, 0)
+    block2.past = False
     
     preset_menu.disabled = False
     preset_menu.index = 0
@@ -542,6 +544,9 @@ block2 = box(size=(SPRING_RADIUS)*vec(1, 1, 1))
 block2.vel = vec(0, 0, 0)
 block2.past = False
 
+def block2_is_past_ground2():
+    return (block2.pos.x - block2.length/2) > (ground2.pos.x + ground2.length/2)
+
 # initialize the other visuals
 HEIGHT_ABOVE_BLOCK = 1
 equilibrium_point = sphere(radius=0.5, color=color.green)
@@ -556,6 +561,7 @@ HEIGHT = 0.1
 ground = box(height=HEIGHT, width=WIDTH, color=color.white)
 ground2 = box(height=HEIGHT, width=WIDTH)
 wall = box(height=15, width=WIDTH, length=HEIGHT, color=color.white)
+wall2 = box(height=15, width=WIDTH, length=HEIGHT, color=color.white)
 
 cliffheight = box(length=HEIGHT, width=WIDTH, color=color.white)
 endofcliff = box(height=HEIGHT, width=WIDTH, color=color.white)
@@ -567,8 +573,6 @@ loopradius = helix(pos=vec(30, (4.5),-1), axis=vec(0,0,1), coils = 1, color=colo
 loopradius.rotate(axis=vec(0, 0, 1), angle=(pi/2), origin=vec(loopradius.pos+loopradius.axis/2))
 loop2 = box(pos=vec(45, -1, -1), length=30, height=.1, width=1, color=color.white)
 loopstopper = box(pos=vec(60, 2, -1), length=.1, height=6, width=1, color=color.white)
-wall2 = box(pos=vec(30, 14, 0), length=.1, height=30, width=1, color=color.white)
-wall2.visible = False
 
 # cliff height slider
 def cliffheightfunc(evt):
@@ -579,7 +583,7 @@ def cliffheightfunc(evt):
     endofcliff.pos.y = cliffheight.pos.y - cliffheight.height/2
     cliffstopper.height = evt.value
     cliffstopper.pos.y = ground2.pos.y - cliffstopper.height/2
-cliffheightslider = slider(bind=cliffheightfunc, min=10, max=30, step=1, length=slider_length, pos=scene.caption_anchor) 
+cliffheightslider = slider(bind=cliffheightfunc, min=10, max=25, step=1, length=slider_length, pos=scene.caption_anchor) 
 cliff_height_slider_text = wtext(text=f"", pos=scene.caption_anchor)
 
 scene.append_to_caption("\n")
@@ -683,20 +687,29 @@ def run2():
     
     block.pos.x += block.vel * dt
     block2.pos.x += block2.vel.x * dt
+
 # TODO: implement friction
 def run3():
-    if block2.pos.x - block2.length/2 > ground.length:
+    if block2_is_past_ground2():
         wall2.visible = True
     if preset_menu.index == 0: # cliff
-        # past the cliff's ledge
-        if not block2.past and block2.pos.x - block2.length/2 > ground.length:
+        if block2.past:
             acc = -GRAVITY
             block2.vel.y += acc * dt
         
-        if not block2.past and block2.pos.y <= endofcliff.pos.y:
-            block2.pos.y = endofcliff.pos.y + block2.height/2
-            block2.vel.y = 0
+        if (block2.pos.y - block2.height/2) <= (endofcliff.pos.y + endofcliff.height/2):
+            block2.vel.y = 0 
+            block.pos.y = endofcliff.pos.y + endofcliff.height/2 + block2.height/2
+            
+        if not block2.past and block2_is_past_ground2():
             block2.past = True
+            # block2.vel.y = 0
+        
+        if (block2.pos.x + block2.length/2) >= (cliffstopper.pos.x - cliffstopper.length/2):
+            block2.vel.x = 0
+            block2.pos.x = cliffstopper.pos.x - cliffstopper.length/2 - block2.length/2
+            
+        
         
     # TODO: fix this
     elif preset_menu.index == 1: # slope
