@@ -13,6 +13,9 @@ def hex_to_color(color_string):
 def lerp(a, b, t):
     return a + (b-a)*t
     
+def within(a, b, epsilon=0.01):
+    return abs(a-b) <= epsilon
+    
 scene = canvas(width=600, height=660, align="left")
 scene.camera.pos = vec(24.0448, 0.133734, 49.8782)
 
@@ -125,7 +128,8 @@ def reset_button_function(evt):
     block2.pos.y = ground2.pos.y + ground2.height/2 + block2.height/2
     block2.vel = vec(0, 0, 0)
     block2.past = False
-    block2.theta = 0
+    block2.looped = False
+    block2.started_loop = False
     
     preset_menu.disabled = False
     preset_menu.index = 0
@@ -145,6 +149,9 @@ def reset_button_function(evt):
     loopradius.pos.x = ground2.pos.x + ground2.length/2
     loopradius.pos.z -= WIDTH
     loopradius.axis = vec(0, 0, WIDTH)
+    
+    loopground.length = 20
+    loopground.pos = ground2.pos + vec(ground2.length/2 + loopground.length/2, 0, -WIDTH)
     
     loopslider.value = 10
     loopfunc(loopslider)
@@ -283,9 +290,7 @@ scene.append_to_caption("\n")
 
 # initial velocity slider
 def initial_velocity_slider_function(evt):
-    radius = loopradius.radius
-    block.vel = sqrt(GRAVITY * radius)
-    # block.vel = calculate_maximum_initial_velocity() * initial_velocity_slider.value
+    block.vel = calculate_maximum_initial_velocity() * initial_velocity_slider.value
     initial_velocity_slider_text.text = f"Initial Velocity: {block.vel:.2f}"    
         
     set_max_displacement_arrow()
@@ -517,8 +522,7 @@ def preset_select(evt):
     loopradius.visible = False
     cliffstopper.visible = False
     loopstopper.visible = False
-    slopestopper.visible = False
-    loop2.visible = False
+    loopground.visible = False
     cliffheightslider.disabled = True
     loopslider.disabled = True
     slopeslider.disabled = True
@@ -530,11 +534,10 @@ def preset_select(evt):
     elif evt.index == 1:
         slopeangle.visible = True
         slopeslider.disabled = False
-        slopestopper.visible = True
     elif evt.index == 2:
         loopslider.disabled = False
         loopradius.visible = True
-        loop2.visible = True
+        loopground.visible = True
         loopstopper.visible = True
     
 scene.append_to_caption(left_margin)
@@ -550,7 +553,8 @@ RIGHT_DISTANCE = 2
 block2 = box(size=(SPRING_RADIUS)*vec(1, 1, 1))
 block2.vel = vec(0, 0, 0)
 block2.past = False
-block2.theta = 0
+block2.looped = False
+block2.started_loop = False
 
 def block2_is_past_ground2():
     return (block2.pos.x - block2.length/2) > (ground2.pos.x + ground2.length/2)
@@ -576,10 +580,10 @@ endofcliff = box(height=HEIGHT, width=WIDTH, color=color.white)
 cliffstopper = box(length=HEIGHT, width=WIDTH, color=color.white)
 
 slopeangle = box(pos=vec(46, 15, 0), length=45, height=.1, width=1,axis=vec(1,1,0), color=color.white)
-slopestopper = box(length=HEIGHT, height = 10, width=WIDTH, color=color.white)
+
 loopradius = helix(axis=vec(0, 0, 1), coils=1, color=color.white, thickness=1)
 loopradius.rotate(axis=vec(0, 0, 1), angle=(pi/2), origin=vec(loopradius.pos+loopradius.axis/2))
-loop2 = box(pos=vec(45, -1, -1), length=30, height=.1, width=1, color=color.white)
+loopground = box(height=HEIGHT, width=WIDTH, color=color.white)
 loopstopper = box(pos=vec(60, 2, -1), length=.1, height=6, width=1, color=color.white)
 
 # cliff height slider
@@ -602,9 +606,8 @@ def slopefunc(evt):
     direction = vec(cos(evt.value), sin(evt.value), 0) 
     slopeangle.axis = (direction * 90)    
 
-    origin = vec(29, -1.5, 0)       
+    origin = vec(30, -1, 0)       
     slopeangle.pos = (origin + 0.5 * slopeangle.axis) 
-    slopestopper.pos = (origin+vec(0,5,0) + slopeangle.axis)
 slopeslider = slider(bind=slopefunc, min=(-pi/6), max=(pi/6), length=slider_length, pos=scene.caption_anchor)
 slope_angle_slider_text = wtext(text="", pos=scene.caption_anchor)
 
@@ -744,21 +747,34 @@ def run3():
             acc_direction = norm(slopeangle.axis)
             acc = (-GRAVITY * sin(theta)) * acc_direction
             block2.vel += acc * dt
-            if block2.pos.x >= 28+slopeangle.axis.x:
-                block2.vel = vec(0,0,0)
 
     elif preset_menu.index == 2: # loop
+        # note: this is not physically accurate
         if block2.past:
-            # note: this is not physically accurate
-            radius = loopradius.radius - loopradius.thickness
-            center = loopradius.pos + loopradius.axis
-            center.z = 0
+            if not block2.looped:
+                radius = loopradius.radius - loopradius.thickness
+                center = loopradius.pos + loopradius.axis
+                center.z = 0
+                
+                centripetal_acceleration = ((block2.vel.mag**2) / radius) * (center - block2.pos).hat
+                block2.vel += centripetal_acceleration * dt
+                
+                # make the block face the center
+                block2.up = block2.pos - center 
             
-            centripetal_acceleration = ((block2.vel.mag**2) / radius) * (center - block2.pos).hat
-            block2.vel += centripetal_acceleration * dt
-            
-            # make the block face the center
-            block2.up = block2.pos - center 
+            small_angle = radians(20)
+            if not block2.looped:
+                angle = atan2(-block2.up.y, -block2.up.x)
+                print(angle)
+                if block2.started_loop:
+                    if within(angle, pi/2 + small_angle):
+                        block2.looped = True
+                        block2.vel = vec(block2.vel.mag, 0, 0)
+                        block2.up = vec(0, 1, 0)
+                else:
+                    if within(angle, pi/2 + small_angle):
+                        block2.started_loop = True
+
     else:
         pass
     
