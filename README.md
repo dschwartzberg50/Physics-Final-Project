@@ -15,10 +15,10 @@ These walls are sticky and if a block touches them, the block will stop and stic
 This is to prevent the block from traveling too far out in view and any other complications.
 The user will also be able to adjust the coefficient of friction between the surface and the blocks, which would alter the outcome of the launch.
 There are graphs of the mechanical energy of the system and the x-position of the block. 
+
 Special Notes:
 The maximum value of the initial velocity slider is dynamically set so that the block never goes further than x=0.
-When the loop setting is chosen, the program will calculate the minimal starting velocity you need for the block to travel completely around the loop given the other conditions.
-
+The loop always allows the block to complete a full loop. (physically inaccurate)
 
 
 Yihan Li and David Schwartzberg
