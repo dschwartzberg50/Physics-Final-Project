@@ -48,9 +48,6 @@ launch_button = button(bind=launch_button_function, text="Launch", background=co
 launch_button.about_to_launch = False
 launch_button.launched = False
 
-# TODO: reset button doesn't work if you press start and then launch
-# TODO: reset button doesn't work after launching and then reset
-
 # reset button; also used to initialize all sliders, buttons, and objects
 def reset_button_function(evt):
     start_button.disabled = False
@@ -128,6 +125,7 @@ def reset_button_function(evt):
     block2.pos.y = ground2.pos.y + ground2.height/2 + block2.height/2
     block2.vel = vec(0, 0, 0)
     block2.past = False
+    block2.theta = 0
     
     preset_menu.disabled = False
     preset_menu.index = 0
@@ -143,6 +141,10 @@ def reset_button_function(evt):
     
     slopeslider.value = pi/12
     slopefunc(slopeslider)
+    
+    loopradius.pos.x = ground2.pos.x + ground2.length/2
+    loopradius.pos.z -= WIDTH
+    loopradius.axis = vec(0, 0, WIDTH)
     
     loopslider.value = 10
     loopfunc(loopslider)
@@ -281,7 +283,9 @@ scene.append_to_caption("\n")
 
 # initial velocity slider
 def initial_velocity_slider_function(evt):
-    block.vel = calculate_maximum_initial_velocity() * initial_velocity_slider.value
+    radius = loopradius.radius
+    block.vel = sqrt(GRAVITY * radius)
+    # block.vel = calculate_maximum_initial_velocity() * initial_velocity_slider.value
     initial_velocity_slider_text.text = f"Initial Velocity: {block.vel:.2f}"    
         
     set_max_displacement_arrow()
@@ -530,6 +534,7 @@ def preset_select(evt):
         loopradius.visible = True
         loop2.visible = True
         loopstopper.visible = True
+    
 scene.append_to_caption(left_margin)
 preset_menu = menu(bind=preset_select, choices=preset_list)
 
@@ -543,6 +548,7 @@ RIGHT_DISTANCE = 2
 block2 = box(size=(SPRING_RADIUS)*vec(1, 1, 1))
 block2.vel = vec(0, 0, 0)
 block2.past = False
+block2.theta = 0
 
 def block2_is_past_ground2():
     return (block2.pos.x - block2.length/2) > (ground2.pos.x + ground2.length/2)
@@ -569,7 +575,7 @@ cliffstopper = box(length=HEIGHT, width=WIDTH, color=color.white)
 
 slopeangle = box(pos=vec(46, 15, 0), length=45, height=.1, width=1,axis=vec(1,1,0), color=color.white)
 
-loopradius = helix(pos=vec(30, (4.5),-1), axis=vec(0,0,1), coils = 1, color=color.white, radius=6, thickness= 1)
+loopradius = helix(axis=vec(0, 0, 1), coils=1, color=color.white, thickness=1)
 loopradius.rotate(axis=vec(0, 0, 1), angle=(pi/2), origin=vec(loopradius.pos+loopradius.axis/2))
 loop2 = box(pos=vec(45, -1, -1), length=30, height=.1, width=1, color=color.white)
 loopstopper = box(pos=vec(60, 2, -1), length=.1, height=6, width=1, color=color.white)
@@ -604,8 +610,8 @@ scene.append_to_caption("\n")
 # radius of loop slider
 def loopfunc(evt):
     loop_radius_slider_text.text = f"Radius: {evt.value:.0f}"
-    loopradius.radius= evt.value
-    loopradius.pos= vec(31,evt.value-1,-1)
+    loopradius.radius = evt.value
+    loopradius.pos.y = ground2.pos.y + loopradius.radius - loopradius.thickness/2
 loopslider = slider(bind=loopfunc, min=6, max=20, step=1, length=slider_length, pos=scene.caption_anchor)
 loop_radius_slider_text = wtext(text="", pos=scene.caption_anchor)
 
@@ -729,7 +735,6 @@ def run3():
             block2.vel.x = 0
             block2.pos.x = cliffstopper.pos.x - cliffstopper.length/2 - block2.length/2
             
-    # TODO: fix this
     elif preset_menu.index == 1: # slope
         if block2.past:
             theta = slopeslider.value
@@ -738,12 +743,20 @@ def run3():
             block2.vel += acc * dt
 
     elif preset_menu.index == 2: # loop
-        # TODO
-        
-        pass
+        if block2.past:
+            # note: this is not physically accurate
+            radius = loopradius.radius - loopradius.thickness
+            center = loopradius.pos + loopradius.axis
+            center.z = 0
+            
+            centripetal_acceleration = ((block2.vel.mag**2) / radius) * (center - block2.pos).hat
+            block2.vel += centripetal_acceleration * dt
+            
+            # make the block face the center
+            block2.up = block2.pos - center 
     else:
         pass
-
+    
     block2.pos += block2.vel * dt
 
 while (True):
