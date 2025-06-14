@@ -146,7 +146,7 @@ def reset_button_function(evt):
     slopefunc(slopeslider)
     
     loopradius.pos.x = ground2.pos.x + ground2.length/2
-    loopradius.pos.z -= WIDTH
+    loopradius.pos.z = -WIDTH
     loopradius.axis = vec(0, 0, WIDTH)
     
     loopground.length = 20
@@ -608,11 +608,13 @@ scene.append_to_caption("\n")
 def slopefunc(evt):
     slope_angle_slider_text.text = f"Angle (degrees): {degrees(evt.value):.0f}"
     direction = vec(cos(evt.value), sin(evt.value), 0) 
-    slopeangle.axis = (direction * 90)    
+    slopeangle.axis = (direction * 20)    
 
-    origin = vec(29, -1.5, 0)       
+    origin = ground2.pos + vec(ground2.length/2,0,0)
     slopeangle.pos = (origin + 0.5 * slopeangle.axis) 
-    slopestopper.pos = (origin+vec(0,5,0) + slopeangle.axis)
+    slopestopper.pos = slopeangle.pos + slopeangle.axis/2 + vec(0,slopestopper.height/2,0)
+    
+    
 slopeslider = slider(bind=slopefunc, min=(-pi/6), max=(pi/6), length=slider_length, pos=scene.caption_anchor)
 slope_angle_slider_text = wtext(text="", pos=scene.caption_anchor)
 
@@ -710,7 +712,8 @@ def run2():
 def run3():
     if not block2.past and block2_is_past_ground2():
         block2.past = True
-        wall2.visible = True
+        if preset_menu.index != 2:
+            wall2.visible = True
         
         if preset_menu.index == 0: # cliff
             pass
@@ -752,12 +755,12 @@ def run3():
             acc_direction = norm(slopeangle.axis)
             acc = (-GRAVITY * sin(theta)) * acc_direction
             block2.vel += acc * dt
-            count = 0
-            if block2.pos.x >= 28+slopeangle.axis.x:
+            
+            if block2.vel.x < 0 and block2.pos.x + block2.length/2 < wall2.pos.x + 1:
                 block2.vel = vec(0,0,0)
-            if block2.pos.x = 30:
-                if count = 2:
-                    block2.vel = vec(0,0,0)
+            
+            if (block2.pos.x + block2.length/2) > (slopestopper.pos.x - slopestopper.length/2):
+                block2.vel = -block2.vel
 
     elif preset_menu.index == 2: # loop
         # note: this is not physically accurate
@@ -779,24 +782,19 @@ def run3():
                 angle = atan2(-block2.up.y, -block2.up.x)
                 percent = ((angle - pi/2)%(2*pi)) / (2*pi)
                 block2.pos.z = lerp(0, loopground.pos.z, percent)
-                if inv_lerp(0, loopground.pos.z, block2.pos.z) >= 0.98:
+                if inv_lerp(0, loopground.pos.z, block2.pos.z) >= 0.95:
                     block2.looped = True
                     block2.vel = vec(block2.vel.mag, 0, 0)
                     block2.up = vec(0, 1, 0)
         
-        if (block2.pos.x + block2.length/2) > (loopstopper.pos.x - loopstopper.length/2):
-            block2.vel.x = 0
-            block2.pos.x = loopstopper.pos.x - loopstopper.length/2 - block2.length/2
+            if (block2.pos.x + block2.length/2) > (loopstopper.pos.x - loopstopper.length/2):
+                block2.vel.x = 0
+                block2.pos.x = loopstopper.pos.x - loopstopper.length/2 - block2.length/2
         
     else:
         pass
     
     block2.pos += block2.vel * dt
-    
-def p(evt):
-    print(scene.camera.pos)
-
-scene.bind("mousedown",p)
 
 while (True):
     rate(100)
