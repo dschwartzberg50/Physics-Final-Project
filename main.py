@@ -753,7 +753,7 @@ def run3():
             count = 0
             if block2.pos.x >= 28+slopeangle.axis.x:
                 block2.vel = vec(0,0,0)
-            if block2.pos.x == 30:
+            if block2.pos.x = 30:
                 if count = 2:
                     block2.vel = vec(0,0,0)
 
