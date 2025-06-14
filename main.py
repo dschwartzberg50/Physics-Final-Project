@@ -141,7 +141,7 @@ def reset_button_function(evt):
     cliffheightslider.value = 15
     cliffheightfunc(cliffheightslider)
     
-    slopeslider.value = pi/4
+    slopeslider.value = pi/12
     slopefunc(slopeslider)
     
     loopslider.value = 10
@@ -596,7 +596,7 @@ def slopefunc(evt):
 
     origin = vec(30, -1, 0)       
     slopeangle.pos = (origin + 0.5 * slopeangle.axis) 
-slopeslider = slider(bind=slopefunc, min=(-pi/3), max=(pi/3), length=slider_length, pos=scene.caption_anchor)
+slopeslider = slider(bind=slopefunc, min=(-pi/6), max=(pi/6), length=slider_length, pos=scene.caption_anchor)
 slope_angle_slider_text = wtext(text="", pos=scene.caption_anchor)
 
 scene.append_to_caption("\n")
@@ -612,7 +612,7 @@ loop_radius_slider_text = wtext(text="", pos=scene.caption_anchor)
 dt = 1
 t = 0
 
-GRAVITY = 0.001
+GRAVITY = 0.01
 #scaled to work of values used in the simulation
 
 # graphs setup
@@ -694,6 +694,16 @@ def run3():
     if not block2.past and block2_is_past_ground2():
         block2.past = True
         wall2.visible = True
+        
+        if preset_menu.index == 0: # cliff
+            pass
+        elif preset_menu.index == 1: # slope
+            block2.rotate(angle=slopeslider.value, axis=vec(0, 0, 1))
+            block2.vel = rotate(block2.vel, angle=slopeslider.value, axis=vec(0, 0, 1))
+        elif preset_menu.index == 2: # loop
+            pass
+        else:
+            pass     
     
     if preset_menu.index == 0: # cliff
         if block2.past:
@@ -719,18 +729,14 @@ def run3():
             block2.vel.x = 0
             block2.pos.x = cliffstopper.pos.x - cliffstopper.length/2 - block2.length/2
             
+    # TODO: fix this
     elif preset_menu.index == 1: # slope
-        block.pos.x += block.vel  # pre-slope horizontal motion
-        
-        if not block2.past:
-            if block2.pos.x - block2.length/2 > ground.length:
-                block2.vel = rotate(block2.vel, angle=slopeslider.value, axis=vec(0, 0, 1))
-                block2.past = True
-        
         if block2.past:
             theta = slopeslider.value
-            acc = (-GRAVITY*sin(theta)) * vec(cos(theta), sin(theta), 0) 
-            block2.vel += acc
+            acc_direction = norm(slopeangle.axis)
+            acc = (-GRAVITY * sin(theta)) * acc_direction
+            block2.vel += acc * dt
+
     elif preset_menu.index == 2: # loop
         # TODO
         
