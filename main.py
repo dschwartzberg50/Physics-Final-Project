@@ -612,7 +612,7 @@ loop_radius_slider_text = wtext(text="", pos=scene.caption_anchor)
 dt = 1
 t = 0
 
-GRAVITY = 0.01
+GRAVITY = 0.001
 #scaled to work of values used in the simulation
 
 # graphs setup
@@ -719,8 +719,6 @@ def run3():
             block2.vel.x = 0
             block2.pos.x = cliffstopper.pos.x - cliffstopper.length/2 - block2.length/2
             
-    # TODO: fix this
-    # TODO: fix this
     elif preset_menu.index == 1: # slope
         block.pos.x += block.vel  # pre-slope horizontal motion
         
@@ -731,14 +729,8 @@ def run3():
         
         if block2.past:
             theta = slopeslider.value
-            slopedirection = norm(slopeangle.axis)
-            block2.vel = dot(block2.vel, slopedirection)* slopedirection
-            acc = (-GRAVITY * sin(theta) * slopedirection)
-            block2.vel += acc * dt
-            block2.pos += block2.vel * dt
-            displacement_along_ramp = dot(block2.pos, slopedirection)
-            block2.pos = displacement_along_ramp * slopedirection
-
+            acc = (-GRAVITY*sin(theta)) * vec(cos(theta), sin(theta), 0) 
+            block2.vel += acc
     elif preset_menu.index == 2: # loop
         # TODO
         
