@@ -517,6 +517,7 @@ def preset_select(evt):
     loopradius.visible = False
     cliffstopper.visible = False
     loopstopper.visible = False
+    slopestopper.visible = False
     loop2.visible = False
     cliffheightslider.disabled = True
     loopslider.disabled = True
@@ -529,6 +530,7 @@ def preset_select(evt):
     elif evt.index == 1:
         slopeangle.visible = True
         slopeslider.disabled = False
+        slopestopper.visible = True
     elif evt.index == 2:
         loopslider.disabled = False
         loopradius.visible = True
@@ -574,7 +576,7 @@ endofcliff = box(height=HEIGHT, width=WIDTH, color=color.white)
 cliffstopper = box(length=HEIGHT, width=WIDTH, color=color.white)
 
 slopeangle = box(pos=vec(46, 15, 0), length=45, height=.1, width=1,axis=vec(1,1,0), color=color.white)
-
+slopestopper = box(length=HEIGHT, height = 10, width=WIDTH, color=color.white)
 loopradius = helix(axis=vec(0, 0, 1), coils=1, color=color.white, thickness=1)
 loopradius.rotate(axis=vec(0, 0, 1), angle=(pi/2), origin=vec(loopradius.pos+loopradius.axis/2))
 loop2 = box(pos=vec(45, -1, -1), length=30, height=.1, width=1, color=color.white)
@@ -600,8 +602,9 @@ def slopefunc(evt):
     direction = vec(cos(evt.value), sin(evt.value), 0) 
     slopeangle.axis = (direction * 90)    
 
-    origin = vec(30, -1, 0)       
+    origin = vec(29, -1.5, 0)       
     slopeangle.pos = (origin + 0.5 * slopeangle.axis) 
+    slopestopper.pos = (origin+vec(0,5,0) + slopeangle.axis)
 slopeslider = slider(bind=slopefunc, min=(-pi/6), max=(pi/6), length=slider_length, pos=scene.caption_anchor)
 slope_angle_slider_text = wtext(text="", pos=scene.caption_anchor)
 
@@ -741,6 +744,8 @@ def run3():
             acc_direction = norm(slopeangle.axis)
             acc = (-GRAVITY * sin(theta)) * acc_direction
             block2.vel += acc * dt
+            if block2.pos.x >= 28+slopeangle.axis.x:
+                block2.vel = vec(0,0,0)
 
     elif preset_menu.index == 2: # loop
         if block2.past:
