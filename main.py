@@ -128,8 +128,6 @@ def reset_button_function(evt):
     block2.pos.y = ground2.pos.y + ground2.height/2 + block2.height/2
     block2.vel = vec(0, 0, 0)
     block2.past = False
-    block2.hitright = False
-    block2.hitbottom = False
     
     preset_menu.disabled = False
     preset_menu.index = 0
@@ -545,8 +543,6 @@ RIGHT_DISTANCE = 2
 block2 = box(size=(SPRING_RADIUS)*vec(1, 1, 1))
 block2.vel = vec(0, 0, 0)
 block2.past = False
-block2.hitright = False
-block2.hitbottom = False
 
 def block2_is_past_ground2():
     return (block2.pos.x - block2.length/2) > (ground2.pos.x + ground2.length/2)
@@ -692,14 +688,13 @@ def run2():
     block.pos.x += block.vel * dt
     block2.pos.x += block2.vel.x * dt
 
-# TODO: implement friction
+# TODO: implement friction for the slope
 def run3():
-    if block2_is_past_ground2():
+    if not block2.past and block2_is_past_ground2():
+        block2.past = True
         wall2.visible = True
+    
     if preset_menu.index == 0: # cliff
-        if not block2.past and block2_is_past_ground2():
-            block2.past = True
-        
         if block2.past:
             # apply gravity
             acc = -GRAVITY
