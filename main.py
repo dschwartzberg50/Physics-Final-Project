@@ -86,7 +86,6 @@ def reset_button_function(evt):
     global horizontal_spacing
     horizontal_spacing = INIT_HORIZONTAL_SPACING
     
-    # TODO: this breaks on reset for some reason
     for i, series_spring in enumerate(series_springs_list):
         series_spring.pos = vec(horizontal_spacing + i * (INIT_SPRING_LENGTH + horizontal_spacing), 0, 0)
         series_spring.axis = vec(INIT_SPRING_LENGTH, 0, 0)
@@ -108,19 +107,6 @@ def reset_button_function(evt):
         for point_index in range(c2.npoints):
             c2.modify(point_index, pos=points2[point_index], color=color.red, radius=CURVE_THICKNESS)
         
-    preset_menu.disabled = False
-    preset_menu.index = 0
-    preset_select(preset_menu)
-    
-    cliffheightslider.value = 30
-    cliffheightfunc(cliffheightslider)
-    
-    slopeslider.value = pi/4
-    slopefunc(slopeslider)
-    
-    loopslider.value = 10
-    loopfunc(loopslider)
-    
     set_visisble_springs()
     set_block_attributes()
     set_equilibrium_position()
@@ -134,11 +120,30 @@ def reset_button_function(evt):
     block2.past = False
     
     ground.length = block2.pos.x
-    ground.pos = vec(ground.length/2, -1, 0)
+    ground.pos = vec(ground.length/2, -block.height/2 - ground.height/2, 0)
     
     ground2.length = 10
     ground2.pos = ground.pos + vec(ground.length/2 + ground2.length/2, 0, 0)
     
+    wall.pos = ground.pos + vec(-ground.length/2 - wall.length/2, wall.height/2, 0)
+    
+    preset_menu.disabled = False
+    preset_menu.index = 0
+    preset_select(preset_menu)
+    
+    cliffheight.pos.x = ground2.pos.x + ground2.length/2
+    endofcliff.length = 20
+    endofcliff.pos.x = cliffheight.pos.x + endofcliff.length/2
+    cliffstopper.pos.x = endofcliff.pos.x + endofcliff.length/2
+    
+    cliffheightslider.value = 15
+    cliffheightfunc(cliffheightslider)
+    
+    slopeslider.value = pi/4
+    slopefunc(slopeslider)
+    
+    loopslider.value = 10
+    loopfunc(loopslider)
     
     global energy_graph
     energy_graph.delete()
@@ -192,8 +197,6 @@ spring_mode_button.is_series_mode = True
 
 scene.append_to_caption("\n")
 
-# TODO: adjust the parameters of all the sliders
-
 # spring slider (# of springs)
 def spring_slider_function(evt):
     spring_slider_text.text = f"Number of Springs: {evt.value:.0f}"
@@ -218,7 +221,7 @@ spring_slider_text = wtext(text="", pos=scene.caption_anchor)
 def spring_constant_slider_function(evt):
     spring_constants_texts[evt.id].text = f"Spring #{(evt.id)+1}: k={evt.value:.1f}"
     
-    # adjust the color maybe ?!?! TODO
+    # adjust the color maybe ?!?! TODO2
     pass
 spring_constants_sliders = []
 spring_constants_texts = []
@@ -285,13 +288,16 @@ initial_velocity_slider_text = wtext(text=f"", pos=scene.caption_anchor)
 
 scene.append_to_caption("\n")
 
-# coefficient of friction slider
+# coefficient of kinetic friction slider
 def friction_slider_function(evt):
-    friction_slider_text.text = f"Coefficient of Friction: {evt.value:.2f}"
+    friction_slider_text.text = f"Coefficient of Kinetic Friction: {evt.value:.2f}"
         
     ground2.color = lerp(MIN_FRICTION_COLOR, MAX_FRICTION_COLOR, evt.value)    
 friction_slider = slider(bind=friction_slider_function, min=0, max=0.9, step=0.01, length=slider_length, pos=scene.caption_anchor)
 friction_slider_text = wtext(text=f"", pos=scene.caption_anchor)
+
+MIN_FRICTION_COLOR = color.white
+MAX_FRICTION_COLOR = color.red
 
 scene.append_to_caption("\n")
 scene.append_to_caption("\n")
@@ -448,7 +454,7 @@ def set_max_displacement_arrow():
     max_displacement_arrow.pos = equilibrium_point.pos
     max_displacement_arrow.axis = vec(calculate_maximum_displacement(), 0, 0)
 
-# modify the springs based on the block's position
+# update the springs and curves based on the block's position
 def update_springs():
     global horizontal_spacing
     springs_list = get_springs_list()
@@ -544,26 +550,23 @@ max_displacement_arrow = arrow(round=True, shaftwidth=0.3, color=hex_to_color("#
 
 # initialize the rest of the objects (floors, walls, slope, cliff, loop)
 
-# set the ground based on the intial position of block 2
-ground = box(height=.1, width=1, color=color.white)
-# ground.length = block2.pos.x
-# ground.pos = vec(ground.length/2, -1, 0)
+WIDTH = 5
+HEIGHT = 0.1
 
-MIN_FRICTION_COLOR = color.white
-MAX_FRICTION_COLOR = color.red
-ground2 = box(height=.1, width=1)
-# ground2.length = 10
-# ground2.pos = ground.pos + vec(ground2.length/2, -1, 0)
+ground = box(height=HEIGHT, width=WIDTH, color=color.white)
+ground2 = box(height=HEIGHT, width=WIDTH)
+wall = box(height=15, width=WIDTH, length=HEIGHT, color=color.white)
 
-cliffheight = box(pos=vec(30, -16, 0), length=.1, height=30, width=1, color=color.white)
-cliffstopper = box(pos=vec(90,-29,0), length=.1, height = 5, width=1, color=color.white)
-endofcliff = box(pos=vec(60, -31, 0), length=60, height=.1, width=1, color=color.white)
+cliffheight = box(length=HEIGHT, width=WIDTH, color=color.white)
+endofcliff = box(height=HEIGHT, width=WIDTH, color=color.white)
+cliffstopper = box(length=HEIGHT, width=WIDTH, color=color.white)
+
 slopeangle = box(pos=vec(46, 15, 0), length=45, height=.1, width=1,axis=vec(1,1,0), color=color.white)
+
 loopradius = helix(pos=vec(30, (4.5),-1), axis=vec(0,0,1), coils = 1, color=color.white, radius=6, thickness= 1)
 loopradius.rotate(axis=vec(0, 0, 1), angle=(pi/2), origin=vec(loopradius.pos+loopradius.axis/2))
 loop2 = box(pos=vec(45, -1, -1), length=30, height=.1, width=1, color=color.white)
 loopstopper = box(pos=vec(60, 2, -1), length=.1, height=6, width=1, color=color.white)
-wall = box(pos=vec(0,12.5/2,0), height=15, width=5, length=0.1, color=color.white)
 wall2 = box(pos=vec(30, 14, 0), length=.1, height=30, width=1, color=color.white)
 wall2.visible = False
 
@@ -572,10 +575,11 @@ def cliffheightfunc(evt):
     cliff_height_slider_text.text = f"Height: {evt.value:.0f}"
     
     cliffheight.height = evt.value
-    cliffheight.pos.y = -evt.value/2-1
-    endofcliff.pos.y = -evt.value-1
-    cliffstopper.pos.y = -evt.value+1.5
-cliffheightslider = slider(bind=cliffheightfunc, min=5, max=50, step=1, length=slider_length, pos=scene.caption_anchor) 
+    cliffheight.pos.y = ground2.pos.y - cliffheight.height/2
+    endofcliff.pos.y = cliffheight.pos.y - cliffheight.height/2
+    cliffstopper.height = evt.value
+    cliffstopper.pos.y = ground2.pos.y - cliffstopper.height/2
+cliffheightslider = slider(bind=cliffheightfunc, min=10, max=30, step=1, length=slider_length, pos=scene.caption_anchor) 
 cliff_height_slider_text = wtext(text=f"", pos=scene.caption_anchor)
 
 scene.append_to_caption("\n")
