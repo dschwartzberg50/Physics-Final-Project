@@ -17,7 +17,7 @@ def inv_lerp(a,b,v):
     return (v-a)/(b-a)
     
 scene = canvas(width=600, height=660, align="left")
-scene.camera.pos = vec(24.0448, 0.133734, 49.8782)
+scene.camera.pos = vec(31.0637, 0.679652, 62.5785)
 
 left_margin = "  "
 slider_length = 200
@@ -106,16 +106,16 @@ def reset_button_function(evt):
         points2 = create_parallel_curve_points(i, VERTICAL_SPACING, horizontal_spacing, INIT_SPRING_LENGTH, True)
         for point_index in range(c2.npoints):
             c2.modify(point_index, pos=points2[point_index], color=color.red, radius=CURVE_THICKNESS)
-        
-    set_visisble_springs()
-    set_block_attributes()
-    set_equilibrium_position()
-    set_max_displacement_arrow()
-    
+
     L = calculate_total_spring_length(n=spring_slider.max)
     ground.length = L + RIGHT_DISTANCE
     ground.pos = vec(ground.length/2, -block.height/2 - ground.height/2, 0)
     
+    set_visisble_springs()
+    set_block_attributes()
+    set_equilibrium_position()
+    set_max_displacement_arrow()
+
     ground2.length = 10
     ground2.pos = ground.pos + vec(ground.length/2 + ground2.length/2, 0, 0)
     
@@ -459,6 +459,8 @@ def set_block_attributes():
     n = spring_slider.value if (not spring_mode_button.is_series_mode) else 1
     block.height = n*(VERTICAL_SPACING + 2*SPRING_RADIUS)
 
+    block.pos.y = ground.pos.y + ground.height/2 + block.height/2
+
 def set_equilibrium_position():
     equilibrium_point.pos = block.pos + vec(0, block.height/2 + HEIGHT_ABOVE_BLOCK, 0)
     
@@ -552,7 +554,7 @@ scene.append_to_caption("\n")
 block = box(length=1, height=2*SPRING_RADIUS, width=1)
 block.vel = 0
 
-RIGHT_DISTANCE = 2
+RIGHT_DISTANCE = 15
 block2 = box(size=(SPRING_RADIUS)*vec(1, 1, 1))
 block2.vel = vec(0, 0, 0)
 block2.past = False
@@ -790,6 +792,11 @@ def run3():
         pass
     
     block2.pos += block2.vel * dt
+    
+def p(evt):
+    print(scene.camera.pos)
+
+scene.bind("mousedown",p)
 
 while (True):
     rate(100)
